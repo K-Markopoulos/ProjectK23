@@ -43,4 +43,5 @@ tuple * histogram(tuple *R){
       value[s].payload = 1;
     }
   }
+  return values;
 }
