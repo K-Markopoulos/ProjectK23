@@ -1,11 +1,7 @@
 #include <iostream>
-<<<<<<< HEAD
 #include <stdint.h>
 #include "../inc/header.h"
-=======
-#include <string>
-#include "header.h"
->>>>>>> b364fd09f21c4c596eb7c444eea919aef5a19f15
+
 
 using namespace std;
 
