@@ -1,10 +1,10 @@
 #include <iostream>
 #include <string>
 #include <math.h>
-#include "header.h"
+#include "../inc/header.h"
 
 int  h1(int value, int n){
-  lastbits = pow(2,n) - 1
+  lastbits = pow(2,n) - 1;
   return value & lastbits;
 }
 
@@ -43,5 +43,4 @@ tuple * histogram(tuple *R){
       value[s].payload = 1;
     }
   }
-  return values;
 }
