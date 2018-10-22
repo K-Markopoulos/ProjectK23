@@ -18,3 +18,7 @@ namespace db{
   };
 
 }
+
+int considered(int32_t, tuple *);
+int size(tuple *);
+tuple * histogram(tuple *);
