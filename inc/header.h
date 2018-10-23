@@ -22,3 +22,6 @@ namespace db{
 int considered(int32_t, tuple *);
 int size(tuple *);
 tuple * histogram(tuple *);
+tuple * psum(tuple *);
+int32_t getposition(int32_t, tuple*);
+tuple * reorder(tuple *, tupne *, tuple *);

@@ -45,15 +45,39 @@ tuple * histogram(tuple *R){
   }
 }
 
-tuple * Psum(tuple * hist){
+tuple * psum(tuple * hist){
   int s = size(hist);
-  tuple psum[s];
+  tuple Psum[s];
   for(int i=0;i<s;i++){
-    psum[i].key = hist[i].key;
+    Psum[i].key = hist[i].key;
     if(i==0)
-      psum[i].payload = 0;
+      Psum[i].payload = 0;
     else
-      psum[i].payload = psum.[i-1].payload + hist[i-1].payload;
+      Psum[i].payload = Psum.[i-1].payload + hist[i-1].payload;
   }
-  return psum;
+  return Psum;
+}
+
+int32_t getposition(int32_t value, tuple* pos_list){
+  int i=0;
+  int32_t position;
+  while(pos_list[i] != NULL){
+    if(pos_list[i].key == value){
+      position = pos_list[i].payload;
+      pos_list[i].payload++;
+      return position;
+    }
+    i++;
+  }
+}
+
+tuple * reorder(tuple *R, tupne *newR, tuple * psum){
+  int s = size(R), spsum = size(psum);
+  int32_t j;
+  tuple * duplicate;
+  memcpy(duplicate,psum,sizeof(psum);
+  for(int i = 0; i<s; i++){
+    j = getposition(R[i].payload, duplicate);
+    memcpy(newR[j],R[i], sizeof(struct tuple));
+  }
 }
