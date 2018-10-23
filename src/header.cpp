@@ -44,3 +44,16 @@ tuple * histogram(tuple *R){
     }
   }
 }
+
+tuple * Psum(tuple * hist){
+  int s = size(hist);
+  tuple psum[s];
+  for(int i=0;i<s;i++){
+    psum[i].key = hist[i].key;
+    if(i==0)
+      psum[i].payload = 0;
+    else
+      psum[i].payload = psum.[i-1].payload + hist[i-1].payload;
+  }
+  return psum;
+}
