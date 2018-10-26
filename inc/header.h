@@ -1,6 +1,10 @@
 #include <iostream>
 #include <stdint.h>
 
+typedef struct tuple tuple;
+typedef struct relation tuple;
+typedef struct result tuple;
+
 namespace db{
 
   struct tuple {

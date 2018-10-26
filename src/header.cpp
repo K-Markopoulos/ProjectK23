@@ -1,10 +1,10 @@
 #include <iostream>
-#include <string>
 #include <math.h>
 #include "../inc/header.h"
 
-int  h1(int value, int n){
-  lastbits = pow(2,n) - 1;
+/* hash function */
+int h1(int value, int n){
+  lastbits = (1 << n) - 1;
   return value & lastbits;
 }
 
@@ -71,13 +71,13 @@ int32_t getposition(int32_t value, tuple* pos_list){
   }
 }
 
-tuple * reorder(tuple *R, tupne *newR, tuple * psum){
+tuple * reorder(tuple *R, tuple *newR, tuple * psum){
   int s = size(R), spsum = size(psum);
   int32_t j;
-  tuple * duplicate;
-  memcpy(duplicate,psum,sizeof(psum);
+  tuple * dictionary = (dictionary*) malloc(sizeof(psum));
+  memcpy(dictionary,psum,sizeof(psum);
   for(int i = 0; i<s; i++){
-    j = getposition(R[i].payload, duplicate);
+    j = getposition(R[i].payload, dictionary);
     memcpy(newR[j],R[i], sizeof(struct tuple));
   }
 }
