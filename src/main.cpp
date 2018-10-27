@@ -3,25 +3,27 @@
 #include "../inc/header.h"
 
 
-using namespace std;
-
 int main(int argc, char * argv[]){
 
   // hardcoded 2 relations R.a and S.a from example
-  struct db::relation reIR, reIS;
+  relation relR, relS;
 
-  reIR.num_tuples = 4;
-  reIR.tuples = new struct db::tuple[reIR.num_tuples];
-  reIR.tuples[0] = {1,1};
-  reIR.tuples[1] = {2,2};
-  reIR.tuples[2] = {3,3};
-  reIR.tuples[3] = {4,4};
+  relR.num_tuples = 4;
+  relR.tuples = new tuple[relR.num_tuples];
+  relR.tuples[0] = {1,1};
+  relR.tuples[1] = {2,2};
+  relR.tuples[2] = {3,3};
+  relR.tuples[3] = {4,1};
 
-  reIS.num_tuples = 3;
-  reIS.tuples = new struct db::tuple[reIS.num_tuples];
-  reIS.tuples[0] = {1,1};
-  reIS.tuples[1] = {2,1};
-  reIS.tuples[2] = {3,3};
+  relS.num_tuples = 3;
+  relS.tuples = new tuple[relS.num_tuples];
+  relS.tuples[0] = {1,1};
+  relS.tuples[1] = {2,1};
+  relS.tuples[2] = {3,3};
 
-  //struct result * result = RadixHashJoin(relR, relS);
+  RadixHashJoin(&relR, &relS);
+
+  delete[] relR.tuples;
+  delete[] relS.tuples;
+  return 0;
 }

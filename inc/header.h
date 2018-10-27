@@ -2,30 +2,46 @@
 #include <stdint.h>
 
 typedef struct tuple tuple;
-typedef struct relation tuple;
-typedef struct result tuple;
+typedef struct relation relation;
+typedef struct result result;
+typedef struct hash_table hash_table;
+typedef struct array_int array_int;
 
-namespace db{
+struct tuple {
+  int32_t key;
+  int32_t payload;
+};
 
-  struct tuple {
-    int32_t key;
-    int32_t payload;
-  };
+struct relation {
+  tuple * tuples;
+  uint32_t num_tuples;
+};
 
-  struct relation {
-    tuple *tuples;
-    uint32_t num_tuples;
-  };
+struct result {
+  tuple *tuples;
+};
 
-  struct result {
-    tuple *tuples;
-  };
+struct array_int{
+  int32_t * data;
+  int32_t length;
+};
 
-}
+struct hash_table{
+  array_int psum;
+  relation * rel;
+};
 
+result * RadixHashJoin(relation * rel_R, relation * rel_S);
+hash_table * reorderRelation(relation * rel);
+relation * createRelation(relation * rel, array_int psum_original);
+array_int createPsum(array_int hist);
+array_int createHistogram(relation * rel);
+
+
+/**** unused functions ****/
 int considered(int32_t, tuple *);
 int size(tuple *);
 tuple * histogram(tuple *);
 tuple * psum(tuple *);
 int32_t getposition(int32_t, tuple*);
-tuple * reorder(tuple *, tupne *, tuple *);
+tuple * reorder(tuple *, tuple *, tuple *);
