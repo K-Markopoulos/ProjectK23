@@ -94,12 +94,38 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
   printRelation(hash_table_S->rel, "S\'");
   //init result
 
-  //for( /* each bucket */ ){
-    // choose min bucket to hash it
+  bucket * bucket_R = (bucket*) malloc(sizeof(bucket));
+  bucket * bucket_S = (bucket*) malloc(sizeof(bucket));
+  bucket * bucket_raw, * bucket_hashed;
+
+  for( int i = 0; i < hash_table_R->psum.length; i++ ){
+    bucket_R->low = hash_table_R->psum.data[i];
+    bucket_R->high = (i == hash_table_R->psum.length - 1) ?
+                      hash_table_R->rel->num_tuples - 1 :
+                      hash_table_R->psum.data[i+1];
+    bucket_S->low = hash_table_S->psum.data[i];
+    bucket_S->high = (i == hash_table_S->psum.length - 1) ?
+                      hash_table_S->rel->num_tuples - 1 :
+                      hash_table_S->psum.data[i+1];
+
+    // I might need it for debugging later
+    // std::cout << i << "\n\t"
+    //   << "bucket1 " << bucket1_low << "-" << bucket1_high << "\n\t"
+    //   << "bucket2 " << bucket2_low << "-" << bucket2_high << std::endl;
+
+    // choose smallest bucket to hash it
+    if (bucket_R->high - bucket_R->low < bucket_S->high - bucket_S->low){
+      bucket_hashed = bucket_R;
+      bucket_raw = bucket_S;
+    } else {
+      bucket_hashed = bucket_S;
+      bucket_raw = bucket_R;
+    }
+
     // make bucket-chain hash for min
     // result "+=" compareBuckets(raw_bucket, hashed_bucket, ... bucket-chain if needed )
     // go to next bucket ??
-  //}
+  }
 
   // return result
 }

@@ -6,6 +6,7 @@ typedef struct relation relation;
 typedef struct result result;
 typedef struct hash_table hash_table;
 typedef struct array_int array_int;
+typedef struct bucket bucket;
 
 struct tuple {
   int32_t key;
@@ -30,6 +31,13 @@ struct hash_table{
   array_int psum;
   relation * rel;
 };
+
+struct bucket{
+  int32_t low;
+  int32_t high;
+};
+
+
 
 result * RadixHashJoin(relation * rel_R, relation * rel_S);
 hash_table * reorderRelation(relation * rel);
