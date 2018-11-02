@@ -3,10 +3,10 @@
 
 typedef struct tuple tuple;
 typedef struct relation relation;
-typedef struct result result;
 typedef struct hash_table hash_table;
 typedef struct array_int array_int;
 typedef struct bucket bucket;
+typedef struct result result;
 
 struct tuple {
   int32_t key;
@@ -16,10 +16,6 @@ struct tuple {
 struct relation {
   tuple * tuples;
   uint32_t num_tuples;
-};
-
-struct result {
-  tuple *tuples;
 };
 
 struct array_int{
@@ -44,6 +40,7 @@ hash_table * reorderRelation(relation * rel);
 relation * createRelation(relation * rel, array_int psum_original);
 array_int createPsum(array_int hist);
 array_int createHistogram(relation * rel);
+
 
 
 /**** unused functions ****/
