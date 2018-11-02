@@ -5,7 +5,7 @@
 
 // 1st hash function
 #define H1_LAST_BITS 3
-#define PRIME_NUM 101 
+#define PRIME_NUM 101
 #define h1(X) (X & ((1 << H1_LAST_BITS) - 1))
 
 
@@ -26,7 +26,7 @@ void printArray(int32_t *arr,int32_t length) {
   for(int32_t i=0; i<length; i++) {
     std::cout<<i<<":";
     std::cout<<arr[i];
-    
+
     std::cout<<std::endl;
   }
 }
@@ -44,20 +44,52 @@ array_int createHistogram(relation * rel){
   for(int32_t i = 0; i < rel->num_tuples; i++){
     hist.data[h1(rel->tuples[i].payload)]++;
   }
-
+  std::cout<<"Hist\n";
+  for(int32_t i=0; i< hist.length;i++){
+    std::cout << hist.data[i]<< std::endl;
+  }
   return hist;
 }
 
+array_int createHistIndex(array_int hist){
+  array_int hist_index;
+  int32_t count = 0;
+  for(int32_t i=0;i<hist.length;i++)
+    if(hist.data[i] != 0){
+      count ++;
+      if(count == 1)
+        hist_index.data = (int32_t*) malloc(count * sizeof(int32_t));
+      else
+        hist_index.data = (int32_t*) realloc(hist_index.data, count * sizeof(int32_t));
+      hist_index.data[count-1]=i;
+    }
+  hist_index.length = count;
+  return hist_index;
+}
 
 array_int createPsum(array_int hist){
-  array_int psum;
+  array_int psum, hist_index;
+  int32_t index_mod=1;
+  hist_index = createHistIndex(hist);
+
+  std::cout<<"hist_index\n";
+  for(int32_t i=0; i< hist_index.length;i++){
+    std::cout << hist_index.data[i]<< std::endl;
+  }
+
   psum.length = hist.length;
-  psum.data = (int32_t*) calloc(sizeof(int32_t), psum.length);
-
-  psum.data[0] = 0;
-  for(int32_t i = 1; i < psum.length; i++)
-    psum.data[i] = psum.data[i-1] + hist.data[i-1];
-
+  psum.data = (int32_t*) malloc(sizeof(int32_t) * psum.length);
+  for(int32_t i = 0; i < psum.length; i++){
+    psum.data[i]=-1;
+  }
+  psum.data[hist_index.data[0]] = 0;
+  for(int32_t i = 1; i<hist_index.length;i++){
+    psum.data[hist_index.data[i]] = psum.data[hist_index.data[i-1]] + hist.data[hist_index.data[i-1]];
+  }
+  std::cout<<"Psum\n";
+  for(int32_t i=0; i< psum.length;i++){
+    std::cout << psum.data[i]<< std::endl;
+  }
   return psum;
 }
 
@@ -95,38 +127,56 @@ hash_table * reorderRelation(relation * rel){
   return result;
 }
 
+int32_t set_high(hash_table* ht, int32_t index_start){
+  for(int32_t i = index_start; i<ht->psum.length; i++){
+    if(ht->psum.data[i]!=-1)
+      return ht->psum.data[i];
+  }
+  return ht->rel->num_tuples;
+}
+
 void indexingAndCompareBuckets(hash_table *small,hash_table *large,result *list) {
-  int32_t *chain,*Bucket;
+  int32_t *chain,*Bucket, index, lg_value, h2_res;
   bucket sm_b,lg_b;
-  for(int32_t i=0; i<small->psum.length; i++) {
-    if( (!small->psum.data[i] && !large->psum.data[i]) || (small->psum.data[i]!=0 && large->psum.data[i]!=0) ) {
+  for(int32_t i=0; i<small->psum.length; i++){
+    if(small->psum.data[i] != -1 && large->psum.data[i] != -1){
       sm_b.low=small->psum.data[i];
       lg_b.low=large->psum.data[i];
 
-      if(i== small->psum.length-1) {
-        sm_b.high=small->rel->num_tuples;
-        lg_b.high=large->rel->num_tuples;
-      }
-      else {
-        sm_b.high=small->psum.data[i+1];
-        lg_b.high=large->psum.data[i+1];
-      }
-      chain=new int32_t[sm_b.high];
+      sm_b.high = set_high(small, i+1);
+      lg_b.high = set_high(large, i+1);
+
+      std::cout<<"SM LOW = "<< sm_b.low << " SM HIGH = "<< sm_b.high << std::endl;
+      std::cout<<"LG LOW = "<< lg_b.low << " LG HIGH = "<< lg_b.high << std::endl;
+
+      chain=new int32_t[sm_b.high - sm_b.low];
       Bucket=new int32_t[PRIME_NUM];          //This will be changed with the next prime number
 
-      for(int32_t j=0; j<PRIME_NUM; j++) {
+      for(int32_t j=0; j<PRIME_NUM; j++){
         Bucket[j]=-1;
       }
 
-      for(int32_t l=sm_b.low; l<sm_b.high; l++) {
-        chain[l]=Bucket[h2(small->rel->tuples[l].payload)];
+      for(int32_t l=sm_b.low; l<sm_b.high; l++){
+        chain[l-sm_b.low]=Bucket[h2(small->rel->tuples[l].payload)];
         Bucket[h2(small->rel->tuples[l].payload)]=l;
       }
 
       /*** Until here we have the indexing part of the algorithm where we construct the chain and Bucket structures ***/
 
       //HERE IS THE COMPARING PART//
-      
+      for(int32_t k = lg_b.low; k < lg_b.high; k++){
+        lg_value = large->rel->tuples[k].payload;
+        h2_res = h2(lg_value);
+        index = Bucket[h2_res];
+        while(index != -1){
+          if(small->rel->tuples[index].payload == lg_value)
+            // RESULT FUNCTION HERE, MALAKA KWSTA:
+            // EDWWWWWWWWWWWWWWWWWWWWWWW
+            // Debug print:
+            std::cout << "Adding to results: " << small->rel->tuples[index].payload << " and " << lg_value << std::endl;
+          index = chain[index];
+        }
+      }
       delete[] chain;
       delete[] Bucket;
     }
@@ -145,7 +195,7 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
 
   printRelation(hash_table_R->rel, "R\'");
   printRelation(hash_table_S->rel, "S\'");
-  
+
   //Here should be the initialization of the 'list'//
   result *list;
   if (rel_R->num_tuples < rel_S->num_tuples)
