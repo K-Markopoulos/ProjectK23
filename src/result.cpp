@@ -57,6 +57,17 @@ tuple * getNthResult(result * res, int32_t n){
     return (tuple *) &bl->tuples[num_tuple];
 }
 
+void printResults(result * res_list){
+  int32_t res_counter = 1;
+  block * curr_block = (block *) malloc(sizeof(block));
+  curr_block = res_list->head;
+  for(int32_t i = 0; i < res_list->num_blocks; i++){
+    for(int32_t j = 0; j < curr_block->num_tuples; j++)
+      std::cout << "Result " << res_counter++ << ": " << curr_block->tuples[j].key << " - " << curr_block->tuples[j].payload << std::endl;
+    curr_block = curr_block->next;
+  }
+}
+
 /* Block Functions */
 void initBlock(block ** bl){
   if(bl != NULL){

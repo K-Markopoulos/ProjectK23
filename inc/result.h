@@ -20,6 +20,7 @@ void initResult(result **);
 void destroyResult(result *);
 void addToResult(result *, tuple *);
 tuple * getNthResult(result *, int32_t);
+void printResults(result *);
 
 void initBlock(block **);
 void destroyBlock(block *);

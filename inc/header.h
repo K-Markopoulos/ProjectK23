@@ -36,7 +36,7 @@ struct bucket{
 
 
 result * RadixHashJoin(relation * rel_R, relation * rel_S);
-void indexingAndCompareBuckets(hash_table *small,hash_table *large,result *list);
+result * indexingAndCompareBuckets(hash_table *small,hash_table *large);
 inline int h2(int32_t num);
 hash_table * reorderRelation(relation * rel);
 relation * createRelation(relation * rel, array_int psum_original);

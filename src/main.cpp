@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdint.h>
 #include "../inc/header.h"
+#include "../inc/result.h"
 
 
 int main(int argc, char * argv[]){
@@ -21,7 +22,8 @@ int main(int argc, char * argv[]){
   relS.tuples[1] = {2,1};
   relS.tuples[2] = {3,3};
 
-  RadixHashJoin(&relR, &relS);
+  result * res_list = RadixHashJoin(&relR, &relS);
+  printResults(res_list);
 
   delete[] relR.tuples;
   delete[] relS.tuples;

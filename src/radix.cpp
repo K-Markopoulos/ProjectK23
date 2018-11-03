@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "../inc/header.h"
+#include "../inc/result.h"
 
 // 1st hash function
 #define H1_LAST_BITS 3
@@ -135,9 +136,12 @@ int32_t set_high(hash_table* ht, int32_t index_start){
   return ht->rel->num_tuples;
 }
 
-void indexingAndCompareBuckets(hash_table *small,hash_table *large,result *list) {
+result * indexingAndCompareBuckets(hash_table *small,hash_table *large) {
   int32_t *chain,*Bucket, index, lg_value, h2_res;
   bucket sm_b,lg_b;
+  result * res_list;
+  tuple res_tuple;
+  initResult(&res_list);
   for(int32_t i=0; i<small->psum.length; i++){
     if(small->psum.data[i] != -1 && large->psum.data[i] != -1){
       sm_b.low=small->psum.data[i];
@@ -169,11 +173,11 @@ void indexingAndCompareBuckets(hash_table *small,hash_table *large,result *list)
         h2_res = h2(lg_value);
         index = Bucket[h2_res];
         while(index != -1){
-          if(small->rel->tuples[index].payload == lg_value)
-            // RESULT FUNCTION HERE, MALAKA KWSTA:
-            // EDWWWWWWWWWWWWWWWWWWWWWWW
-            // Debug print:
-            std::cout << "Adding to results: " << small->rel->tuples[index].payload << " and " << lg_value << std::endl;
+          if(small->rel->tuples[index].payload == lg_value){
+            res_tuple.key = small->rel->tuples[index].key;
+            res_tuple.payload = large->rel->tuples[k].key;
+            addToResult(res_list, &res_tuple);
+          }
           index = chain[index];
         }
       }
@@ -181,6 +185,7 @@ void indexingAndCompareBuckets(hash_table *small,hash_table *large,result *list)
       delete[] Bucket;
     }
   }
+  return res_list;
 }
 
 
@@ -197,11 +202,10 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
   printRelation(hash_table_S->rel, "S\'");
 
   //Here should be the initialization of the 'list'//
-  result *list;
+  result *res_list;
   if (rel_R->num_tuples < rel_S->num_tuples)
-    indexingAndCompareBuckets(hash_table_R,hash_table_S,list);
+    res_list = indexingAndCompareBuckets(hash_table_R,hash_table_S);
   else
-    indexingAndCompareBuckets(hash_table_S,hash_table_R,list);
-
-  return list;
+    res_list = indexingAndCompareBuckets(hash_table_S,hash_table_R);
+  return res_list;
 }
