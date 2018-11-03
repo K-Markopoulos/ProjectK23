@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -7,6 +8,7 @@
 
 #define RESULT_BLOCK_SIZE 1024*1024
 #define RESULT_BLOCK_MAX_TUPLES (1024*1024 / sizeof(tuple))
+//#define RESULT_BLOCK_MAX_TUPLES 20
 
 /* Result Functions */
 void initResult(result ** res){
@@ -23,6 +25,7 @@ void destroyResult(result * res){
   while(block_next != NULL){
     block_next = block_current->next;
     destroyBlock(block_current);
+    block_current = block_next;
   }
   free(res);
 }
@@ -43,15 +46,15 @@ tuple * getNthResult(result * res, int32_t n){
     int32_t num_tuple = n % RESULT_BLOCK_MAX_TUPLES;
     int32_t block_counter = 0;
     block * bl = res->head;
-    while(block_counter != block_num){
+    while(block_counter++ != num_block){
       bl = bl->next;
       if(bl == NULL){
         return NULL;
       }
     }
-    if(bl->tuple_num - 1 > num_block)
+    if(num_block + 1 > bl->num_tuples)
       return NULL;
-    return bl->tuples[num_tuple];
+    return (tuple *) &bl->tuples[num_tuple];
 }
 
 /* Block Functions */
@@ -59,7 +62,7 @@ void initBlock(block ** bl){
   if(bl != NULL){
     *bl = (block*) malloc(sizeof(block));
     (*bl)->tuples = (tuple*) malloc(RESULT_BLOCK_SIZE);
-    (*bl)->num_tuples = 1;
+    (*bl)->num_tuples = 0;
     (*bl)->next = NULL;
   }
 }
@@ -80,3 +83,38 @@ void setBlockNext(block * bl, block * next){
 bool isFullBlock(block * bl){
   return bl->num_tuples == RESULT_BLOCK_MAX_TUPLES;
 }
+
+
+
+#ifdef TEST_RESULT
+int main(int argc, char * argv[]){
+  result * res;
+  initResult(&res);
+
+  tuple * data = (tuple * ) malloc(sizeof(tuple));
+
+  std::cout << "------ Pushing -----\n";
+
+  for(int i = 0; i < 100; i++){
+      data->key = i;
+      data->payload = i;
+      addToResult(res, data);
+      std::cout << " > (" << data->key << ',' << data->payload << ")\n";
+  }
+
+  free(data);
+
+  std::cout << "------ Retreiving -----\n";
+
+  for(int i = 0; i < 100; i++){
+    if((data = getNthResult(res, i)) == NULL){
+      std::cout << "Error: Index (" << i << ") out of borders\n";
+      continue;
+    }
+    std::cout << " < (" << data->key << ',' << data->payload << ")\n";
+  }
+
+  destroyResult(res);
+  return 0;
+}
+#endif

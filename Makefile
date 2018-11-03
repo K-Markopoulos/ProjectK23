@@ -25,3 +25,8 @@ clean:
 d: CCFLAGS += -g3
 
 d: $(EXE)
+
+# test results
+test_result: CCFLAGS += -D TEST_RESULT
+test_result: ./obj/result.o
+	$(CC) -o $@ $^ $(CCFLAGS)
