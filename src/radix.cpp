@@ -37,37 +37,23 @@ array_int createHistogram(relation * rel){
   return hist;
 }
 
-array_int createHistIndex(array_int hist){
-  array_int hist_index;
-  int32_t count = 0;
-  for(int32_t i=0;i<hist.length;i++)
-    if(hist.data[i] != 0){
-      count ++;
-      if(count == 1)
-        hist_index.data = (int32_t*) malloc(count * sizeof(int32_t));
-      else
-        hist_index.data = (int32_t*) realloc(hist_index.data, count * sizeof(int32_t));
-      hist_index.data[count-1]=i;
-    }
-  hist_index.length = count;
-  return hist_index;
-}
-
 array_int createPsum(array_int hist){
-  array_int psum, hist_index;
+  array_int psum;
   int32_t index_mod=1;
-  hist_index = createHistIndex(hist);
 
   psum.length = hist.length;
-  psum.data = (int32_t*) malloc(sizeof(int32_t) * psum.length);
-  for(int32_t i = 0; i < psum.length; i++){
-    psum.data[i]=-1;
+  psum.data = (int32_t*) calloc(sizeof(int32_t),psum.length);
+  psum.data[0]=0;
+  for(int32_t i = 1; i < psum.length; i++){
+    psum.data[i]=psum.data[i-1] +hist.data[i-1];
   }
-  psum.data[hist_index.data[0]] = 0;
-  for(int32_t i = 1; i<hist_index.length;i++){
-    psum.data[hist_index.data[i]] = psum.data[hist_index.data[i-1]] + hist.data[hist_index.data[i-1]];
+  for(int32_t i=0; i<psum.length-1; i++) {
+    if(psum.data[i]==psum.data[i+1])
+      psum.data[i]=-1;
   }
-  free(hist_index.data);
+  if(psum.data[psum.length-2]==psum.data[psum.length-1])
+      psum.data[psum.length-2]=-1;
+
   return psum;
 }
 
@@ -114,7 +100,7 @@ int32_t set_high(hash_table* ht, int32_t index_start){
   return ht->rel->num_tuples;
 }
 
-result * indexingAndCompareBuckets(hash_table *small,hash_table *large) {
+result * indexingAndCompareBuckets(hash_table *small,hash_table *large,bool isReversed) {
   int32_t *chain,*Bucket, index, lg_value, h2_res;
   bucket sm_b,lg_b;
   result * res_list;
@@ -158,8 +144,14 @@ result * indexingAndCompareBuckets(hash_table *small,hash_table *large) {
         index = Bucket[h2_res];
         while(index != -1){
           if(small->rel->tuples[index].payload == lg_value){
-            res_tuple.key = small->rel->tuples[index].key;
-            res_tuple.payload = large->rel->tuples[k].key;
+            if(isReversed) {
+              res_tuple.key = large->rel->tuples[k].key;
+              res_tuple.payload = small->rel->tuples[index].key;
+            }
+            else {
+              res_tuple.key = small->rel->tuples[index].key;
+              res_tuple.payload = large->rel->tuples[k].key;
+            }
             addToResult(res_list, &res_tuple);
           }
           index = chain[index];
@@ -188,9 +180,9 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
   //Here should be the initialization of the 'list'//
   result *res_list;
   if (rel_R->num_tuples < rel_S->num_tuples)
-    res_list = indexingAndCompareBuckets(hash_table_R,hash_table_S);
+    res_list = indexingAndCompareBuckets(hash_table_R,hash_table_S,false);
   else
-    res_list = indexingAndCompareBuckets(hash_table_S,hash_table_R);
+    res_list = indexingAndCompareBuckets(hash_table_S,hash_table_R,true);
 
   freeHashTableAndComponents(hash_table_R);
   freeHashTableAndComponents(hash_table_S);
