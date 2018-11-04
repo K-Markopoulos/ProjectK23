@@ -22,17 +22,6 @@ void printRelation(relation * rel, char const * name){
   std::cout << "* /Printing Relation " << name << std::endl << std::endl;
 }
 
-/*print an array for debugging,needs some fixing
-void printArray(int32_t *arr,int32_t length) {
-  for(int32_t i=0; i<length; i++) {
-    std::cout<<i<<":";
-    std::cout<<arr[i];
-
-    std::cout<<std::endl;
-  }
-}
-*/
-
 inline int32_t h2(int32_t num) {
   return num % PRIME_NUM; //Later we are going to find the next prime from length
 }
@@ -44,10 +33,6 @@ array_int createHistogram(relation * rel){
 
   for(int32_t i = 0; i < rel->num_tuples; i++){
     hist.data[h1(rel->tuples[i].payload)]++;
-  }
-  std::cout<<"Hist\n";
-  for(int32_t i=0; i< hist.length;i++){
-    std::cout << hist.data[i]<< std::endl;
   }
   return hist;
 }
@@ -73,11 +58,6 @@ array_int createPsum(array_int hist){
   int32_t index_mod=1;
   hist_index = createHistIndex(hist);
 
-  std::cout<<"hist_index\n";
-  for(int32_t i=0; i< hist_index.length;i++){
-    std::cout << hist_index.data[i]<< std::endl;
-  }
-
   psum.length = hist.length;
   psum.data = (int32_t*) malloc(sizeof(int32_t) * psum.length);
   for(int32_t i = 0; i < psum.length; i++){
@@ -87,10 +67,7 @@ array_int createPsum(array_int hist){
   for(int32_t i = 1; i<hist_index.length;i++){
     psum.data[hist_index.data[i]] = psum.data[hist_index.data[i-1]] + hist.data[hist_index.data[i-1]];
   }
-  std::cout<<"Psum\n";
-  for(int32_t i=0; i< psum.length;i++){
-    std::cout << psum.data[i]<< std::endl;
-  }
+  free(hist_index.data);
   return psum;
 }
 
@@ -113,7 +90,7 @@ relation * createRelation(relation * rel, array_int psum_original){
     psum.data[h1(rel->tuples[i].payload)]++;
   }
 
-  //free(psum.data);
+  free(psum.data);
   return new_rel;
 }
 
@@ -125,6 +102,7 @@ hash_table * reorderRelation(relation * rel){
   result->psum = createPsum(hist);
   result->rel = createRelation(rel, result->psum);
 
+  free(hist.data);
   return result;
 }
 
@@ -147,11 +125,17 @@ result * indexingAndCompareBuckets(hash_table *small,hash_table *large) {
       sm_b.low=small->psum.data[i];
       lg_b.low=large->psum.data[i];
 
+    if(i = small->psum.length - 1){
+      sm_b.high = small->rel->num_tuples;
+      lg_b.high = large->rel->num_tuples;
+    }
+    else{
       sm_b.high = set_high(small, i+1);
       lg_b.high = set_high(large, i+1);
+    }
 
-      std::cout<<"SM LOW = "<< sm_b.low << " SM HIGH = "<< sm_b.high << std::endl;
-      std::cout<<"LG LOW = "<< lg_b.low << " LG HIGH = "<< lg_b.high << std::endl;
+      //DEBUG//std::cout<<"SM LOW = "<< sm_b.low << " SM HIGH = "<< sm_b.high << std::endl;
+      //DEBUG//std::cout<<"LG LOW = "<< lg_b.low << " LG HIGH = "<< lg_b.high << std::endl;
 
       chain=new int32_t[sm_b.high - sm_b.low];
       Bucket=new int32_t[PRIME_NUM];          //This will be changed with the next prime number
@@ -196,7 +180,7 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
 
   hash_table * hash_table_R = reorderRelation(rel_R);
   hash_table * hash_table_S = reorderRelation(rel_S);
-  std::cout << "reordering DONE\n";
+  //DEBUG//std::cout << "reordering DONE\n";
 
   printRelation(hash_table_R->rel, "R\'");
   printRelation(hash_table_S->rel, "S\'");
@@ -207,5 +191,15 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
     res_list = indexingAndCompareBuckets(hash_table_R,hash_table_S);
   else
     res_list = indexingAndCompareBuckets(hash_table_S,hash_table_R);
+
+  freeHashTableAndComponents(hash_table_R);
+  freeHashTableAndComponents(hash_table_S);
   return res_list;
+}
+
+void freeHashTableAndComponents(hash_table * ht){
+  free(ht->psum.data);
+  free(ht->rel->tuples);
+  free(ht->rel);
+  free(ht);
 }

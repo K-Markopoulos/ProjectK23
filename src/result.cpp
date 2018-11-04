@@ -59,8 +59,7 @@ tuple * getNthResult(result * res, int32_t n){
 
 void printResults(result * res_list){
   int32_t res_counter = 1;
-  block * curr_block = (block *) malloc(sizeof(block));
-  curr_block = res_list->head;
+  block * curr_block = res_list->head;
   for(int32_t i = 0; i < res_list->num_blocks; i++){
     for(int32_t j = 0; j < curr_block->num_tuples; j++)
       std::cout << "Result " << res_counter++ << ": " << curr_block->tuples[j].key << " - " << curr_block->tuples[j].payload << std::endl;
@@ -103,8 +102,7 @@ int main(int argc, char * argv[]){
   initResult(&res);
 
   tuple * data = (tuple * ) malloc(sizeof(tuple));
-
-  std::cout << "------ Pushing -----\n";
+  //DEBUG//std::cout << "------ Pushing -----\n";
 
   for(int i = 0; i < 100; i++){
       data->key = i;
@@ -114,15 +112,14 @@ int main(int argc, char * argv[]){
   }
 
   free(data);
-
-  std::cout << "------ Retreiving -----\n";
+  //DEBUG//std::cout << "------ Retreiving -----\n";
 
   for(int i = 0; i < 100; i++){
     if((data = getNthResult(res, i)) == NULL){
-      std::cout << "Error: Index (" << i << ") out of borders\n";
+      //DEBUG//std::cout << "Error: Index (" << i << ") out of borders\n";
       continue;
     }
-    std::cout << " < (" << data->key << ',' << data->payload << ")\n";
+    //DEBUG//std::cout << " < (" << data->key << ',' << data->payload << ")\n";
   }
 
   destroyResult(res);

@@ -42,13 +42,4 @@ hash_table * reorderRelation(relation * rel);
 relation * createRelation(relation * rel, array_int psum_original);
 array_int createPsum(array_int hist);
 array_int createHistogram(relation * rel);
-
-
-
-/**** unused functions ****/
-int considered(int32_t, tuple *);
-int size(tuple *);
-tuple * histogram(tuple *);
-tuple * psum(tuple *);
-int32_t getposition(int32_t, tuple*);
-tuple * reorder(tuple *, tuple *, tuple *);
+void freeHashTableAndComponents(hash_table *);

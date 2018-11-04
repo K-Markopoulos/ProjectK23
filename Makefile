@@ -8,7 +8,7 @@ OBJ_DIR = obj
 SRC = $(wildcard $(SRC_DIR)/*.cpp)
 OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-CCFLAGS += -std=c++11
+CCFLAGS += -std=c++11 -g
 
 .PHONY: clean
 
