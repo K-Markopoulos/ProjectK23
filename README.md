@@ -13,7 +13,12 @@
 1. git clone https://github.com/K-Markopoulos/ProjectK23
 2. cd ProjectK23
 3. make
-4. ./join
+```
+Run default, test1 or test2
+```
+./join
+./join test1
+./join test2
 ```
 
 ## Built With

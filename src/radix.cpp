@@ -157,14 +157,9 @@ result * indexingAndCompareBuckets(hash_table *small,hash_table *large,bool isRe
       sm_b.low=small->psum.data[i];
       lg_b.low=large->psum.data[i];
 
-    if(i = small->psum.length - 1){
+      i = small->psum.length - 1;
       sm_b.high = small->rel->num_tuples;
       lg_b.high = large->rel->num_tuples;
-    }
-    else{
-      sm_b.high = set_high(small, i+1);
-      lg_b.high = set_high(large, i+1);
-    }
 
       //DEBUG//std::cout<<"SM LOW = "<< sm_b.low << " SM HIGH = "<< sm_b.high << std::endl;
       //DEBUG//std::cout<<"LG LOW = "<< lg_b.low << " LG HIGH = "<< lg_b.high << std::endl;
@@ -219,15 +214,15 @@ result * indexingAndCompareBuckets(hash_table *small,hash_table *large,bool isRe
  */
 result * RadixHashJoin(relation * rel_R, relation * rel_S){
 
-  printRelation(rel_R, "R");
-  printRelation(rel_S, "S");
+  //printRelation(rel_R, "R");
+  //printRelation(rel_S, "S");
 
   hash_table * hash_table_R = reorderRelation(rel_R);
   hash_table * hash_table_S = reorderRelation(rel_S);
   //DEBUG//std::cout << "reordering DONE\n";
 
-  printRelation(hash_table_R->rel, "R\'");
-  printRelation(hash_table_S->rel, "S\'");
+  //printRelation(hash_table_R->rel, "R\'");
+  //printRelation(hash_table_S->rel, "S\'");
 
   //Here should be the initialization of the 'list'//
   result *res_list;
