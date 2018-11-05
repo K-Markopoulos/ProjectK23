@@ -8,18 +8,22 @@ OBJ_DIR = obj
 SRC = $(wildcard $(SRC_DIR)/*.cpp)
 OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-CCFLAGS += -std=c++11 -g
+CCFLAGS += -std=c++11
 
 .PHONY: clean
+.PHONY: directories
 
-$(EXE): $(OBJ)
-	$(CC) -o $@ $^ $(CCFLAGS)
+$(EXE): directories $(OBJ)
+	$(CC) -o $@ $(OBJ) $(CCFLAGS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) $(CCFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(EXE) $(OBJ)
+
+directories:
+	mkdir -p obj
 
 #compile for gdb
 d: CCFLAGS += -g3

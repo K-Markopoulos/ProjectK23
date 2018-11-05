@@ -10,9 +10,12 @@
 #define h1(X) (X & ((1 << H1_LAST_BITS) - 1))
 
 
-/********** SOURCE   **********/
-
-/* pretty print a relation for debugging */
+/**
+ * pretty print a relation for debugging
+ *
+ * @params res, the result struct
+ * @params name, a label for the relation
+ */
 void printRelation(relation * rel, char const * name){
   std::cout << "* Printing Relation " << name << std::endl;
   std::cout << "* key  | payload" << std::endl;
@@ -22,10 +25,22 @@ void printRelation(relation * rel, char const * name){
   std::cout << "* /Printing Relation " << name << std::endl << std::endl;
 }
 
+/**
+ * H2 hash function
+ *
+ * @params num, hash this number
+ * @returns hash value
+ */
 inline int32_t h2(int32_t num) {
   return num % PRIME_NUM; //Later we are going to find the next prime from length
 }
 
+/**
+ * Creates a Histogram from a relation
+ *
+ * @params rel, the relation
+ * @returns Histogram
+ */
 array_int createHistogram(relation * rel){
   array_int hist;
   hist.length = (1 << H1_LAST_BITS);
@@ -37,6 +52,12 @@ array_int createHistogram(relation * rel){
   return hist;
 }
 
+/**
+ * Creates a Psum array from a Histogram
+ *
+ * @params hist, the histogram
+ * @returns Psum
+ */
 array_int createPsum(array_int hist){
   array_int psum;
   int32_t index_mod=1;
@@ -57,7 +78,13 @@ array_int createPsum(array_int hist){
   return psum;
 }
 
-
+/**
+ * Creates a reordered relation using the original relation and the Psum array
+ *
+ * @params res, the result struct
+ * @params psum_original, the Psum array
+ * @returns relation, the reordered relation
+ */
 relation * createRelation(relation * rel, array_int psum_original){
   //make a psum copy
   array_int psum;
@@ -80,7 +107,13 @@ relation * createRelation(relation * rel, array_int psum_original){
   return new_rel;
 }
 
-
+/**
+ * Creates a reordered relation using the original relation and the Psum array
+ *
+ * @params res, the result struct
+ * @params psum_original, the Psum array
+ * @returns hash_table
+ */
 hash_table * reorderRelation(relation * rel){
   hash_table * result = (hash_table*) malloc(sizeof(hash_table));
 
@@ -92,6 +125,12 @@ hash_table * reorderRelation(relation * rel){
   return result;
 }
 
+/**
+ * Finds at which element a bucket ends
+ *
+ * @params ht, the hash table
+ * @params index_start, the bucket we are currently
+ */
 int32_t set_high(hash_table* ht, int32_t index_start){
   for(int32_t i = index_start; i<ht->psum.length; i++){
     if(ht->psum.data[i]!=-1)
@@ -100,6 +139,13 @@ int32_t set_high(hash_table* ht, int32_t index_start){
   return ht->rel->num_tuples;
 }
 
+/**
+ * Indexing in the smallest relation and comparing bucket by bucket
+ *
+ * @params small, hash table which has the 'small' relation
+ * @params large, hash table which has the 'large' relation
+ * @params isReversed, for printing the results in the order the 2 relations were given
+ */
 result * indexingAndCompareBuckets(hash_table *small,hash_table *large,bool isReversed) {
   int32_t *chain,*Bucket, index, lg_value, h2_res;
   bucket sm_b,lg_b;
@@ -164,7 +210,13 @@ result * indexingAndCompareBuckets(hash_table *small,hash_table *large,bool isRe
   return res_list;
 }
 
-
+/**
+ * Join two relations
+ *
+ * @params rel_R, 1st relation as R
+ * @params rel_S, 1st relation as S
+ * @returns result list
+ */
 result * RadixHashJoin(relation * rel_R, relation * rel_S){
 
   printRelation(rel_R, "R");
@@ -189,6 +241,11 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
   return res_list;
 }
 
+/**
+ *  Free the hash table
+ *
+ * @params ht, the hash table
+ */
 void freeHashTableAndComponents(hash_table * ht){
   free(ht->psum.data);
   free(ht->rel->tuples);

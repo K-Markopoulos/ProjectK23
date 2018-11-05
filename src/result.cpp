@@ -8,9 +8,13 @@
 
 #define RESULT_BLOCK_SIZE 1024*1024
 #define RESULT_BLOCK_MAX_TUPLES (1024*1024 / sizeof(tuple))
-//#define RESULT_BLOCK_MAX_TUPLES 20
 
-/* Result Functions */
+
+/**
+ * Initialize result list
+ *
+ * @params res, the result struct
+ */
 void initResult(result ** res){
   if(res != NULL){
     *res = (result*) malloc(sizeof(result));
@@ -20,6 +24,11 @@ void initResult(result ** res){
   }
 }
 
+/**
+ * Destroy the struct
+ *
+ * @params res, the result struct
+ */
 void destroyResult(result * res){
   block * block_current = res->head, * block_next = res->head;
   while(block_next != NULL){
@@ -30,6 +39,12 @@ void destroyResult(result * res){
   free(res);
 }
 
+/**
+ * Add a tuple to result list
+ *
+ * @params res, the result struct
+ * @params data, the tuple struct
+ */
 void addToResult(result * res, tuple * data){
   if(isFullBlock(res->last)){
     res->num_blocks++;
@@ -41,6 +56,12 @@ void addToResult(result * res, tuple * data){
   addToBlock(res->last, data);
 }
 
+/**
+ * Get Nth tuple from result list
+ *
+ * @params res, the result struct
+ * @params n, index of tuple (starting at 0)
+ */
 tuple * getNthResult(result * res, int32_t n){
     int32_t num_block = n / RESULT_BLOCK_MAX_TUPLES;
     int32_t num_tuple = n % RESULT_BLOCK_MAX_TUPLES;
@@ -57,6 +78,11 @@ tuple * getNthResult(result * res, int32_t n){
     return (tuple *) &bl->tuples[num_tuple];
 }
 
+/**
+ * Printing the tuples of the res_list
+ *
+ * @params res_list
+ */
 void printResults(result * res_list){
   int32_t res_counter = 1;
   block * curr_block = res_list->head;
@@ -67,7 +93,14 @@ void printResults(result * res_list){
   }
 }
 
-/* Block Functions */
+
+/********** BLOCK FUNCTIONS **********/
+
+/**
+ * Initialize a block strust
+ *
+ * @params bl, the block struct
+ */
 void initBlock(block ** bl){
   if(bl != NULL){
     *bl = (block*) malloc(sizeof(block));
@@ -77,32 +110,56 @@ void initBlock(block ** bl){
   }
 }
 
+/**
+ * Destroy a block struct
+ *
+ * @params bl, the block struct
+ */
 void destroyBlock(block * bl){
   free(bl->tuples);
   free(bl);
 }
 
+/**
+ * Add a tuple to the end of block
+ *
+ * @params block, the block struct
+ * @params data, the tuple struct
+ */
 void addToBlock(block * block, tuple * data){
   block->tuples[block->num_tuples++] = *data;
 }
 
+/**
+ * Set the next block of a block
+ *
+ * @params bl, the block to update
+ * @params next, the next block
+ */
 void setBlockNext(block * bl, block * next){
   bl->next = next;
 }
 
+/**
+ * Checks if block is full of tuples
+ *
+ * @params block, the block struct
+ */
 bool isFullBlock(block * bl){
   return bl->num_tuples == RESULT_BLOCK_MAX_TUPLES;
 }
 
-
-
+/**
+ * Test for result struct and functions
+ *
+ */
 #ifdef TEST_RESULT
 int main(int argc, char * argv[]){
   result * res;
   initResult(&res);
 
   tuple * data = (tuple * ) malloc(sizeof(tuple));
-  //DEBUG//std::cout << "------ Pushing -----\n";
+  std::cout << "------ Pushing -----\n";
 
   for(int i = 0; i < 100; i++){
       data->key = i;
@@ -112,14 +169,14 @@ int main(int argc, char * argv[]){
   }
 
   free(data);
-  //DEBUG//std::cout << "------ Retreiving -----\n";
+  std::cout << "------ Retreiving -----\n";
 
   for(int i = 0; i < 100; i++){
     if((data = getNthResult(res, i)) == NULL){
-      //DEBUG//std::cout << "Error: Index (" << i << ") out of borders\n";
+      std::cout << "Error: Index (" << i << ") out of borders\n";
       continue;
     }
-    //DEBUG//std::cout << " < (" << data->key << ',' << data->payload << ")\n";
+    std::cout << " < (" << data->key << ',' << data->payload << ")\n";
   }
 
   destroyResult(res);
