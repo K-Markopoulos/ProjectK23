@@ -7,6 +7,8 @@ typedef struct hash_table hash_table;
 typedef struct array_int array_int;
 typedef struct bucket bucket;
 typedef struct result result;
+typedef struct b_chain b_chain;
+typedef struct bucket_hash bucket_hash;
 
 struct tuple {
   int32_t key;
@@ -33,10 +35,22 @@ struct bucket{
   int32_t high;
 };
 
+struct b_chain {
+  int32_t *Bucket;
+  int32_t *Chain;
+};
+
+struct bucket_hash {
+  bucket *b;
+  hash_table *ht;
+};
+
+
 
 
 result * RadixHashJoin(relation * rel_R, relation * rel_S);
-result * indexingAndCompareBuckets(hash_table *small,hash_table *large);
+void compareBuckets(bucket_hash *sm,bucket_hash *lg,b_chain *bc,result *res_list,bool isReversed);
+b_chain * indexingSmallBucket(bucket_hash *small);
 inline int h2(int32_t num);
 hash_table * reorderRelation(relation * rel);
 relation * createRelation(relation * rel, array_int psum_original);

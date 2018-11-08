@@ -11,7 +11,7 @@ int main(int argc, char * argv[]){
   relation relR, relS;
 
   //test 1, expecting no match
-  int32_t num_test;
+  int32_t num_test=0;
 
   if(argc > 1 && !strcmp(argv[1], "test1"))
     num_test = 1;

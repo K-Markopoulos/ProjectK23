@@ -156,79 +156,52 @@ int32_t set_high(hash_table* ht, int32_t index_start){
  * @params large, hash table which has the 'large' relation
  * @params isReversed, for printing the results in the order the 2 relations were given
  */
-result * indexingAndCompareBuckets(hash_table *small,hash_table *large,bool isReversed) {
-  int32_t *chain,*Bucket, index, lg_value, h2_res;
-  //hash_table *temp;
-  //bucket temp_b;
-  bucket sm_b,lg_b;
-  result * res_list;
+
+
+void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *res_list,bool isReversed) {
+  int32_t lg_value,h2_res,index;
   tuple res_tuple;
-  initResult(&res_list);
 
-  for(int32_t i=0; i<small->psum.length; i++){
-    if(small->psum.data[i] != -1 && large->psum.data[i] != -1){
-      sm_b.low=small->psum.data[i];
-      lg_b.low=large->psum.data[i];
-
-      
-      sm_b.high = set_high(small,i+1);
-      lg_b.high = set_high(large,i+1);
-
-
-      /* Seeing about how correct is 
-      if(lg_b.high-lg_b.low <= sm_b.high-sm_b.low) {
-        temp_b=sm_b;
-        sm_b=lg_b;
-        lg_b=temp_b;
-        temp=small;
-        small=large;
-        large=temp;
-      } */
-      
-      //DEBUG//std::cout<<"SM LOW = "<< sm_b.low << " SM HIGH = "<< sm_b.high << std::endl;
-      //DEBUG//std::cout<<"LG LOW = "<< lg_b.low << " LG HIGH = "<< lg_b.high << std::endl;
-
-      chain=new int32_t[sm_b.high-sm_b.low];
-      Bucket=new int32_t[PRIME_NUM];          //This will be changed with the next prime number
-
-      for(int32_t j=0; j<PRIME_NUM; j++){
-        Bucket[j]=-1;
-      }
-
-      for(int32_t l=sm_b.low; l<sm_b.high; l++){
-        chain[l-sm_b.low]=Bucket[h2(small->rel->tuples[l].payload)];
-        Bucket[h2(small->rel->tuples[l].payload)]=l-sm_b.low;
-      }
-
-
-      /*** Until here we have the indexing part of the algorithm where we construct the chain and Bucket structures ***/
-
-      //HERE IS THE COMPARING PART//
-      for(int32_t k = lg_b.low; k < lg_b.high; k++){
-        lg_value = large->rel->tuples[k].payload;
-        h2_res = h2(lg_value);
-        index = Bucket[h2_res];
-        while(index != -1){
-          if(small->rel->tuples[index+sm_b.low].payload == lg_value){
-            if(isReversed) {
-              res_tuple.key = large->rel->tuples[k].key;
-              res_tuple.payload = small->rel->tuples[index+sm_b.low].key;
-            }
-            else {
-              res_tuple.key = small->rel->tuples[index+sm_b.low].key;
-              res_tuple.payload = large->rel->tuples[k].key;
-            }
-            addToResult(res_list, &res_tuple);
-          }
-          index = chain[index];
+  int32_t sm_low=small->b->low;
+  for(int32_t k=large->b->low; k<large->b->high; k++) {
+    lg_value=large->ht->rel->tuples[k].payload;
+    h2_res=h2(lg_value);
+    index=bc->Bucket[h2_res];
+    while(index!=-1) {
+      if(small->ht->rel->tuples[index+sm_low].payload==lg_value) {
+        if(isReversed) {
+          res_tuple.key=large->ht->rel->tuples[k].key;
+          res_tuple.payload=small->ht->rel->tuples[index+sm_low].key;
         }
+        else {
+          res_tuple.key=small->ht->rel->tuples[index+sm_low].key;
+          res_tuple.payload=large->ht->rel->tuples[k].key;
+        }
+        addToResult(res_list,&res_tuple);
       }
-      delete[] chain;
-      delete[] Bucket;
+      index=bc->Chain[index];
     }
   }
-  return res_list;
 }
+
+b_chain * indexingSmallBucket(bucket_hash *small) {
+  b_chain * bc=new b_chain();
+
+  bc->Chain=new int32_t[small->b->high-small->b->low];
+  bc->Bucket=new int32_t[PRIME_NUM];
+
+  for(int32_t j=0; j<PRIME_NUM; j++){
+    bc->Bucket[j]=-1;
+  }
+
+  for(int32_t l=small->b->low; l<small->b->high; l++){
+    bc->Chain[l-small->b->low]=bc->Bucket[h2(small->ht->rel->tuples[l].payload)];
+    bc->Bucket[h2(small->ht->rel->tuples[l].payload)]=l-small->b->low;
+  }
+
+  return bc;
+}
+
 
 /**
  * Join two relations
@@ -238,7 +211,6 @@ result * indexingAndCompareBuckets(hash_table *small,hash_table *large,bool isRe
  * @returns result list
  */
 result * RadixHashJoin(relation * rel_R, relation * rel_S){
-
   //printRelation(rel_R, "R");
   //printRelation(rel_S, "S");
 
@@ -251,11 +223,45 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
 
   //Here should be the initialization of the 'list'//
   result *res_list;
-  if (rel_R->num_tuples < rel_S->num_tuples)
-    res_list = indexingAndCompareBuckets(hash_table_R,hash_table_S,false);
-  else
-    res_list = indexingAndCompareBuckets(hash_table_S,hash_table_R,true);
+  initResult(&res_list);
 
+  for(int32_t i=0; i<hash_table_R->psum.length; i++) {
+    bucket R_bucket,S_bucket;
+    bucket_hash small,large;
+    bool isReversed;
+
+    if(hash_table_R->psum.data[i]!=-1 && hash_table_S->psum.data[i] !=-1) {
+      R_bucket.low=hash_table_R->psum.data[i];
+      S_bucket.low=hash_table_S->psum.data[i];
+
+      R_bucket.high=set_high(hash_table_R,i+1);
+      S_bucket.high=set_high(hash_table_S,i+1);
+
+      if(R_bucket.high-R_bucket.low <= S_bucket.high-S_bucket.low) {
+        small.b=&R_bucket;
+        small.ht=hash_table_R;
+
+        large.b=&S_bucket;
+        large.ht=hash_table_S;
+        isReversed=false;
+      }
+      else {
+        small.b=&S_bucket;
+        small.ht=hash_table_S;
+
+        large.b=&R_bucket;
+        large.ht=hash_table_R;
+        isReversed=true;
+      }
+      b_chain *bc=indexingSmallBucket(&small);
+      compareBuckets(&small,&large,bc,res_list,isReversed);
+
+      delete[] bc->Chain;
+      delete[] bc->Bucket;
+      delete bc;
+    }
+  }
+  
   freeHashTableAndComponents(hash_table_R);
   freeHashTableAndComponents(hash_table_S);
   return res_list;
