@@ -51,6 +51,8 @@ struct bucket_hash {
 result * RadixHashJoin(relation * rel_R, relation * rel_S);
 void compareBuckets(bucket_hash *sm,bucket_hash *lg,b_chain *bc,result *res_list,bool isReversed);
 b_chain * indexingSmallBucket(bucket_hash *small);
+bool isPrime(uint32_t n);
+inline int findNextPrime(uint32_t n);
 inline int h2(int32_t num);
 hash_table * reorderRelation(relation * rel);
 relation * createRelation(relation * rel, array_int psum_original);

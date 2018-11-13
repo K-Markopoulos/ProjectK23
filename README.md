@@ -1,9 +1,9 @@
-# Software Development for Information System
+# Software Development for Information Systems
 
 
 ## Parts
 
-* Part1: [DONE] Implementation of [Radix Hash Join](systems.ethz/ch/node/334) algorithm for two relations
+* Part1: [DONE] Implementation of [Radix Hash Join](https://systems.ethz.ch/node/334) algorithm for two relations
 * Part2: Refining of part 1 for multiple relations
 * Part3: Query optimization using threads
 

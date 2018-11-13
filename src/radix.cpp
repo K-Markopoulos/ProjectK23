@@ -6,9 +6,10 @@
 
 // 1st hash function
 #define H1_LAST_BITS 8
-#define PRIME_NUM 101
+//#define PRIME_NUM 101
 #define h1(X) (X & ((1 << H1_LAST_BITS) - 1))
 
+uint32_t PRIME_NUM;
 
 /**
  * pretty print a relation for debugging
@@ -184,10 +185,38 @@ void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *re
   }
 }
 
+/**
+ * Finds if a number is prime
+ *
+ * @params n,the 'input' number
+ * @returns true or false
+ */
+bool isPrime(uint32_t n) {
+    for(int i=2; i*i<=n; i++) {
+      if(n % i == 0) {
+        return false;
+      }
+    }
+    return true;
+}
+
+/**
+ * Iterates through numbers bigger than n until it finds a prime
+ *
+ * @params res, the result struct
+ * @returns next prime number
+ */
+inline int findNextPrime(uint32_t n) {
+  while(!isPrime(++n));
+  return n;
+}
+
 b_chain * indexingSmallBucket(bucket_hash *small) {
   b_chain * bc=new b_chain();
+  int bucket_size=small->b->high-small->b->low;
 
-  bc->Chain=new int32_t[small->b->high-small->b->low];
+  bc->Chain=new int32_t[bucket_size];
+  PRIME_NUM=findNextPrime(bucket_size);
   bc->Bucket=new int32_t[PRIME_NUM];
 
   for(int32_t j=0; j<PRIME_NUM; j++){
