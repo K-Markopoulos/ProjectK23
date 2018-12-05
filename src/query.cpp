@@ -1,6 +1,9 @@
 #include <iostream>
-#include "inc/databse.h"
+#include <string>
+#include <vector>
+#include "inc/database.h"
 #include "inc/query.h"
+#include "inc/utils.h"
 
 /** -----------------------------------------------------
  * parse a query, populate relations, predicates, filters and selectors of query
@@ -11,7 +14,7 @@ void Query::parseQuery(const string line){
   //NOT IMPLEMENTED
 
   //split by '|'
-  vector<string> sections = split(line.'|');
+  vector<string> sections = split(line, '|');
 
   //add relations
   for(string rel : split(sections[0].' ')){
@@ -19,7 +22,7 @@ void Query::parseQuery(const string line){
   }
 
   //add predicates and filters
-  for(string pred : split(sections[1].'&')){
+  for(string pred : split(sections[1], '&')){
     if( isFilter(pred) )
       filters.emplace_back( Filter(pred) );
     else
@@ -27,7 +30,7 @@ void Query::parseQuery(const string line){
   }
 
   //add selectors
-  for(string sel : split(sections[2].' ')){
+  for(string sel : split(sections[2], ' ')){
       selectors.emplace_back( Selector(sel) );
   }
 
