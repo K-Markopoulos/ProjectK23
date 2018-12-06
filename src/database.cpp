@@ -1,6 +1,6 @@
 #include <iostream>
-#include "inc/databse.h"
-#include "inc/query.h"
+#include "../inc/database.h"
+#include "../inc/query.h"
 
 /** -----------------------------------------------------
  * Adds the path of a relation in DB

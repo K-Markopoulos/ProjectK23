@@ -1,41 +1,53 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "inc/database.h"
-#include "inc/query.h"
-#include "inc/utils.h"
+#include <stdbool.h>
+//#include "../inc/database.h"
+#include "../inc/query.h"
+#include "../inc/utils.h"
+
 
 /** -----------------------------------------------------
  * parse a query, populate relations, predicates, filters and selectors of query
  *
  * @params line, [FROM]|[WHERE]|[SELECT]
  */
-void Query::parseQuery(const string line){
+bool Query::parseQuery(const string line){
   //NOT IMPLEMENTED
 
   //split by '|'
   vector<string> sections = split(line, '|');
 
+  MUST(validateSections(sections))
+  LOG("sections OK!\n")
   //add relations
-  for(string rel : split(sections[0].' ')){
-    relations.emplace_back( Relation(rel) );
+  for(string rel : split(sections[0], ' ')){
+    MUST(validateRelation(rel))
+    LOG("Relation '%s' OK!\n", rel.c_str())
+    //relations.emplace_back( Relation(rel) );
   }
 
   //add predicates and filters
   for(string pred : split(sections[1], '&')){
-    if( isFilter(pred) )
-      filters.emplace_back( Filter(pred) );
-    else
-      predicates.emplace_back( Predicate(pred) );
+    MUST(validatePredicate(pred))
+    LOG("Predicate '%s' OK!\n", pred.c_str())
+    // if(isFilter(pred))
+    //   filters.emplace_back(Filter(pred));
+    // else
+    //   predicates.emplace_back(Predicate(pred));
   }
 
   //add selectors
   for(string sel : split(sections[2], ' ')){
-      selectors.emplace_back( Selector(sel) );
+    MUST(validateSelector(sel))
+    LOG("Selector '%s' OK!\n", sel.c_str())
+    //selectors.emplace_back( Selector(sel) );
   }
 
-  return;
+  return true;
 }
+
+#ifdef complete
 /** -----------------------------------------------------
  * getter for Relation
  *
@@ -68,3 +80,4 @@ Filter* Query::getfilter(const uint64_t index){
 Selector* Query::getSelector(const uint64_t index){
   return selectors[index];
 }
+#endif

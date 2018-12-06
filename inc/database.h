@@ -1,5 +1,5 @@
 #include <iostream>
-#include "inc/query.h"
+#include "../inc/query.h"
 
 class Database{
   std::vector<char*> relationSource;

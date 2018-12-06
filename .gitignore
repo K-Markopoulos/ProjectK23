@@ -1,2 +1,4 @@
 obj/
 join
+test*
+!tests/

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "inc/databse.h"
+#include "inc/database.h"
 #include "inc/query.h"
 
 using namespace std;
