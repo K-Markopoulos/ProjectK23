@@ -13,7 +13,6 @@
  * @params line, [FROM]|[WHERE]|[SELECT]
  */
 bool Query::parseQuery(const string line){
-  //NOT IMPLEMENTED
 
   //split by '|'
   vector<string> sections = split(line, '|');
@@ -24,17 +23,17 @@ bool Query::parseQuery(const string line){
   for(string rel : split(sections[0], ' ')){
     MUST(validateRelation(rel))
     LOG("Relation '%s' OK!\n", rel.c_str())
-    relations.push_back(db->getRelation(stoi(rel)));
+    //relations.push_back(db->getRelation(stoi(rel)));
   }
 
   //add predicates and filters
   for(string pred : split(sections[1], '&')){
     MUST(validatePredicate(pred))
     LOG("Predicate '%s' OK!\n", pred.c_str())
-    if(isFilter(pred))
-      filters.emplace_back(Filter(pred));
-    else
-      predicates.emplace_back(Predicate(pred));
+    // if(isFilter(pred))
+    //   filters.emplace_back(Filter(pred));
+    // else
+    //   predicates.emplace_back(Predicate(pred));
   }
 
   //add selectors
@@ -84,7 +83,10 @@ Selector* Query::getSelector(const int index){
  *
  */
 void Query::clear(){
-  //NOT IMPLEMENTED
+  this->relations.clear();
+  this->predicates.clear();
+  this->filters.clear();
+  this->selectors.clear();
   return;
 }
 

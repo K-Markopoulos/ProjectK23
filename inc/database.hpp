@@ -17,6 +17,8 @@ class Database{
     void addRelation(const std::string fileName);
     // get relation
     Relation* getRelation(int id);
+    // get the count of relations
+    size_t getRelationsCount();
     // run a query
     char* run(Query query);
 };

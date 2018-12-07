@@ -1,6 +1,9 @@
 #include <iostream>
 #include "../inc/query.hpp"
 #include "../inc/utils.hpp"
+#include "../inc/database.hpp"
+
+Database* db;
 
 using namespace std;
 

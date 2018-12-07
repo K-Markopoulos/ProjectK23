@@ -24,6 +24,21 @@ vector<string> split(const string line, const char delim){
 }
 
 /** -----------------------------------------------------
+ * Checks if file exists
+ *
+ * @params name, name of file
+ * @params true if exists, else false
+ */
+bool file_exists(const string& name) {
+  if (FILE *file = fopen(name.c_str(), "r")) {
+    fclose(file);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/** -----------------------------------------------------
  * split a string based on the delimeter
  *
  * @params line, string to split

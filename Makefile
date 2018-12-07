@@ -1,6 +1,6 @@
 CC = g++
 
-EXE = join
+EXE = runner
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -44,9 +44,18 @@ test_result: ./obj/result.o
 
 test_utils: ./obj/utils.o ./obj/testUtils.o
 	$(CC) -o $@ $^ $(CCFLAGS)
+	#
+	# OK! now try ./test_utils
+	#
 
-test_parsing: ./obj/query.o ./obj/testParsing.o ./obj/utils.o
+test_parsing: ./obj/database.o ./obj/relation.o ./obj/query.o ./obj/testParsing.o ./obj/utils.o
 	$(CC) -o $@ $^ $(CCFLAGS)
 	#
 	# OK! now try ./test_parsing < workloads/small/small.work
+	#
+
+test_relation: ./obj/database.o ./obj/relation.o ./obj/testRelation.o ./obj/utils.o
+	$(CC) -o $@ $^ $(CCFLAGS)
+	#
+	# OK! now try ./test_relation < ./workloads/small/small.init
 	#

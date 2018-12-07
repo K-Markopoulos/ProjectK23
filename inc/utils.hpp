@@ -21,6 +21,8 @@ using namespace std;
 
 // split a string based on the delimeter
 vector<string> split(const string line, const char delim);
+// checks if file exists
+bool file_exists(const string& name);
 // if predicate match filter format
 bool isFilter(string pred);
 
