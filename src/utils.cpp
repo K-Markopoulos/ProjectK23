@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstddef>
-#include "../inc/utils.h"
+#include "../inc/utils.hpp"
 
 using namespace std;
 
@@ -23,6 +23,16 @@ vector<string> split(const string line, const char delim){
   return sections;
 }
 
+/** -----------------------------------------------------
+ * split a string based on the delimeter
+ *
+ * @params line, string to split
+ * @params delim, character used as delimeter
+ */
+bool isFilter(string pred){
+  MUST(pred.find('.') == pred.rfind('.')) // only one dot
+  return true;
+}
 /** -----------------------------------------------------
  * validates that sections are as expected
  *

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
-#include "../inc/header.h"
+#include "../inc/radix.h"
 #include "../inc/result.h"
 
 // 1st hash function
@@ -9,7 +9,7 @@
 //#define PRIME_NUM 101
 #define h1(X) (X & ((1 << H1_LAST_BITS) - 1))
 
-uint32_t PRIME_NUM;
+uint64_t PRIME_NUM;
 
 /**
  * pretty print a relation for debugging
@@ -22,7 +22,7 @@ void printRelation(relation * rel, char const * name){
   std::cout << "* key  | payload" << std::endl;
   std::cout << "* -----+--------" << std::endl;
   for(int i = 0; i < rel->num_tuples; i++)
-    printf("* %5d|%5d\n", rel->tuples[i].key, rel->tuples[i].payload);
+    printf("* %5ld|%5ld\n", rel->tuples[i].key, rel->tuples[i].payload);
   std::cout << "* /Printing Relation " << name << std::endl << std::endl;
 }
 
@@ -32,7 +32,7 @@ void printRelation(relation * rel, char const * name){
  * @params num, hash this number
  * @returns hash value
  */
-inline int32_t h2(int32_t num) {
+inline int64_t h2(int64_t num) {
   return num % PRIME_NUM; //Later we are going to find the next prime from length
 }
 
@@ -45,9 +45,9 @@ inline int32_t h2(int32_t num) {
 array_int createHistogram(relation * rel){
   array_int hist;
   hist.length = (1 << H1_LAST_BITS);
-  hist.data = (int32_t*) calloc(sizeof(int32_t), hist.length);
+  hist.data = (int64_t*) calloc(sizeof(int64_t), hist.length);
 
-  for(int32_t i = 0; i < rel->num_tuples; i++){
+  for(int64_t i = 0; i < rel->num_tuples; i++){
     hist.data[h1(rel->tuples[i].payload)]++;
   }
   return hist;
@@ -63,12 +63,12 @@ array_int createPsum(array_int hist){
   array_int psum;
   int previous;
   bool count=true;
-  int32_t index_mod=1;
+  int64_t index_mod=1;
 
   psum.length = hist.length;
-  psum.data = (int32_t*) calloc(sizeof(int32_t),psum.length);
+  psum.data = (int64_t*) calloc(sizeof(int64_t),psum.length);
   psum.data[0]=0;
-  for(int32_t i = 0; i < psum.length; i++){
+  for(int64_t i = 0; i < psum.length; i++){
    if(hist.data[i]!=0) {
     if(count) {
       psum.data[i]=0;
@@ -98,8 +98,8 @@ relation * createRelation(relation * rel, array_int psum_original){
   //make a psum copy
   array_int psum;
   psum.length = psum_original.length;
-  psum.data = (int32_t*) malloc(psum.length * sizeof(int32_t));
-  memcpy(psum.data, psum_original.data, psum.length * sizeof(int32_t));
+  psum.data = (int64_t*) malloc(psum.length * sizeof(int64_t));
+  memcpy(psum.data, psum_original.data, psum.length * sizeof(int64_t));
 
   //init new_rel
   relation * new_rel = (relation*) malloc(sizeof(relation));
@@ -107,7 +107,7 @@ relation * createRelation(relation * rel, array_int psum_original){
   new_rel->tuples = (tuple*) malloc(rel->num_tuples * sizeof(tuple));
 
   //insert tuples to new_rel
-  for(int32_t i = 0; i < rel->num_tuples; i++){
+  for(int64_t i = 0; i < rel->num_tuples; i++){
     new_rel->tuples[psum.data[h1(rel->tuples[i].payload)]] = rel->tuples[i];
     psum.data[h1(rel->tuples[i].payload)]++;
   }
@@ -140,10 +140,10 @@ hash_table * reorderRelation(relation * rel){
  * @params ht, the hash table
  * @params index_start, the bucket we are currently
  */
-int32_t set_high(hash_table* ht, int32_t index_start){
+int64_t set_high(hash_table* ht, int64_t index_start){
   if(index_start == ht->psum.length)
     return ht->rel->num_tuples;
-  for(int32_t i = index_start; i<ht->psum.length; i++){
+  for(int64_t i = index_start; i<ht->psum.length; i++){
     if(ht->psum.data[i]!=-1)
       return ht->psum.data[i];
   }
@@ -160,11 +160,11 @@ int32_t set_high(hash_table* ht, int32_t index_start){
 
 
 void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *res_list,bool isReversed) {
-  int32_t lg_value,h2_res,index;
+  int64_t lg_value,h2_res,index;
   tuple res_tuple;
 
-  int32_t sm_low=small->b->low;
-  for(int32_t k=large->b->low; k<large->b->high; k++) {
+  int64_t sm_low=small->b->low;
+  for(int64_t k=large->b->low; k<large->b->high; k++) {
     lg_value=large->ht->rel->tuples[k].payload;
     h2_res=h2(lg_value);
     index=bc->Bucket[h2_res];
@@ -191,7 +191,7 @@ void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *re
  * @params n,the 'input' number
  * @returns true or false
  */
-bool isPrime(uint32_t n) {
+bool isPrime(uint64_t n) {
     for(int i=2; i*i<=n; i++) {
       if(n % i == 0) {
         return false;
@@ -206,7 +206,7 @@ bool isPrime(uint32_t n) {
  * @params res, the result struct
  * @returns next prime number
  */
-inline int findNextPrime(uint32_t n) {
+inline int findNextPrime(uint64_t n) {
   while(!isPrime(++n));
   return n;
 }
@@ -215,15 +215,15 @@ b_chain * indexingSmallBucket(bucket_hash *small) {
   b_chain * bc=new b_chain();
   int bucket_size=small->b->high-small->b->low;
 
-  bc->Chain=new int32_t[bucket_size];
+  bc->Chain=new int64_t[bucket_size];
   PRIME_NUM=findNextPrime(bucket_size);
-  bc->Bucket=new int32_t[PRIME_NUM];
+  bc->Bucket=new int64_t[PRIME_NUM];
 
-  for(int32_t j=0; j<PRIME_NUM; j++){
+  for(int64_t j=0; j<PRIME_NUM; j++){
     bc->Bucket[j]=-1;
   }
 
-  for(int32_t l=small->b->low; l<small->b->high; l++){
+  for(int64_t l=small->b->low; l<small->b->high; l++){
     bc->Chain[l-small->b->low]=bc->Bucket[h2(small->ht->rel->tuples[l].payload)];
     bc->Bucket[h2(small->ht->rel->tuples[l].payload)]=l-small->b->low;
   }
@@ -254,7 +254,7 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
   result *res_list;
   initResult(&res_list);
 
-  for(int32_t i=0; i<hash_table_R->psum.length; i++) {
+  for(int64_t i=0; i<hash_table_R->psum.length; i++) {
     bucket R_bucket,S_bucket;
     bucket_hash small,large;
     bool isReversed;
@@ -290,7 +290,7 @@ result * RadixHashJoin(relation * rel_R, relation * rel_S){
       delete bc;
     }
   }
-  
+
   freeHashTableAndComponents(hash_table_R);
   freeHashTableAndComponents(hash_table_S);
   return res_list;

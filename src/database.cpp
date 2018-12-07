@@ -1,26 +1,32 @@
 #include <iostream>
-#include "../inc/database.h"
-#include "../inc/query.h"
+#include <string>
+#include <vector>
+#include <unistd.h>
+#include "../inc/database.hpp"
+#include "../inc/query.hpp"
+
+using namespace std;
 
 /** -----------------------------------------------------
- * Adds the path of a relation in DB
+ * Adds a new relation in DB, specifying path
  *
- * @params fileName, fileName where relation is stored (binary)
+ * @params fileName, fileName where relation is stored
  */
-void Database::addRelationSource(const char * fileName){
-  //NOT IMPLEMENTED
+void Database::addRelation(const string fileName){
+  this->relations.emplace_back(Relation(fileName));
   return;
 }
+
 /** -----------------------------------------------------
- * Gets the path of a relation from DB
+ * Gets a relation from DB
  *
  * @params id, the histogram
- * @returns char*, relation's path
+ * @returns relation
  */
-char* Database::getRelationSource(uint64_t id){
-  //NOT IMPLEMENTED
-  return NULL;
+Relation* Database::getRelation(int id){
+  return &this->relations[id];
 }
+
 /** -----------------------------------------------------
  * Runs the query using RadixHashJoin and returns the result
  *
@@ -29,5 +35,9 @@ char* Database::getRelationSource(uint64_t id){
  */
 char* Database::run(Query query){
   //NOT IMPLEMENTED
+  //shhhhhhhhhhhh
+  cout << "Running ...";
+  sleep(3000);
+  cout << "\nDone\n";
   return NULL;
 }

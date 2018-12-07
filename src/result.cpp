@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include "../inc/header.h"
+#include "../inc/radix.h"
 #include "../inc/result.h"
 
 #define RESULT_BLOCK_SIZE 1024*1024
