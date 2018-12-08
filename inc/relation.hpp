@@ -9,7 +9,7 @@ class Relation{
   bool loaded = false;
   uint64_t num_cols;
   uint64_t num_tuples;
-  void* memblock;
+  const void* memblock;
   std::vector<void *> cols;
   std::vector<std::vector<tuple>> cols_; //  ***** MIGHT BE DISCARDED ******
   public:

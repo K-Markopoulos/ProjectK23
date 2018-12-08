@@ -15,8 +15,11 @@ using namespace std;
  * @params fileName, fileName where relation is stored
  */
 void Database::addRelation(const string fileName){
-  if(file_exists(fileName))
+  if(!file_exists(fileName)){
+    LOG("File not found: %s\n", fileName.c_str());
     return;
+  }
+
   this->relations.emplace_back(Relation(fileName));
   return;
 }

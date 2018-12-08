@@ -114,14 +114,14 @@ bool validatePredicate(const string& predicate){
 bool validateSelector(const string& selector){
   size_t pos_dot;
   MUST(!selector.empty()) // not empty
-  //LOG("Selector '%s' not empty OK!\n", selector.c_str())
+  //LOG("Selector '%s' not empty OK!\n", selector.c_str());
   MUST(selector.find_first_not_of(".0123456789") == string::npos) // only digits and dot
-  // LOG("Selector '%s' only digits and dot OK!\n", selector.c_str())
+  // LOG("Selector '%s' only digits and dot OK!\n", selector.c_str());
   MUST((pos_dot=selector.find('.')) != string::npos) // got a dot
-  // LOG("Selector '%s' got a dot OK!\n", selector.c_str())
+  // LOG("Selector '%s' got a dot OK!\n", selector.c_str());
   MUST(pos_dot == selector.rfind('.')) // only one dot
-  // LOG("Selector '%s' only one dot OK!\n", selector.c_str())
+  // LOG("Selector '%s' only one dot OK!\n", selector.c_str());
   MUST(pos_dot != 0 && pos_dot != selector.size()-1) // dot not first or last
-  //LOG("Selector '%s' dot not first or last (%ld/%d) OK!\n", selector.c_str(), pos_dot,selector.size())
+  //LOG("Selector '%s' dot not first or last (%ld/%d) OK!\n", selector.c_str(), pos_dot,selector.size());
   return true;
 }

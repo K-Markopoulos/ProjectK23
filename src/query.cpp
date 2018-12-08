@@ -18,18 +18,18 @@ bool Query::parseQuery(const string line){
   vector<string> sections = split(line, '|');
 
   MUST(validateSections(sections))
-  LOG("sections OK!\n")
+  LOG("sections OK!\n");
   //add relations
   for(string rel : split(sections[0], ' ')){
     MUST(validateRelation(rel))
-    LOG("Relation '%s' OK!\n", rel.c_str())
+    LOG("Relation '%s' OK!\n", rel.c_str());
     //relations.push_back(db->getRelation(stoi(rel)));
   }
 
   //add predicates and filters
   for(string pred : split(sections[1], '&')){
     MUST(validatePredicate(pred))
-    LOG("Predicate '%s' OK!\n", pred.c_str())
+    LOG("Predicate '%s' OK!\n", pred.c_str());
     // if(isFilter(pred))
     //   filters.emplace_back(Filter(pred));
     // else
@@ -39,7 +39,7 @@ bool Query::parseQuery(const string line){
   //add selectors
   for(string sel : split(sections[2], ' ')){
     MUST(validateSelector(sel))
-    LOG("Selector '%s' OK!\n", sel.c_str())
+    LOG("Selector '%s' OK!\n", sel.c_str());
     //selectors.emplace_back( Selector(sel) );
   }
 

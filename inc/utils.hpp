@@ -11,11 +11,11 @@
     }                         \
   }
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
-#define LOG(...) fprintf(stdout,"[DEBUB]: "); fprintf( stdout, __VA_ARGS__ );
+#define LOG(...) fprintf(stdout,"[DEBUG]: "); fprintf( stdout, __VA_ARGS__ );
 #else
-#define DEBUG_PRINT(...) do{ } while ( 0 )
+#define LOG(...) do{ } while ( 0 )
 #endif
 using namespace std;
 

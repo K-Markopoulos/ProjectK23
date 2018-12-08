@@ -56,6 +56,8 @@ test_parsing: ./obj/database.o ./obj/relation.o ./obj/query.o ./obj/testParsing.
 
 test_relation: ./obj/database.o ./obj/relation.o ./obj/testRelation.o ./obj/utils.o
 	$(CC) -o $@ $^ $(CCFLAGS)
+	@echo '#!/bin/bash\nDIFF=$$(diff <(cat $$(cat ./workloads/small/small.init | sed "s/.*/\.\/workloads\/small\/&\.tbl/")) <(./test_relation < ./workloads/small/small.init))\nif [ "$$DIFF" == "" ]\nthen\necho PASSED\nelse\necho FAILED\nfi' > test_relation.sh
+	@chmod +x ./test_relation.sh
 	#
-	# OK! now try ./test_relation < ./workloads/small/small.init
+	# OK! now try ./test_relation.sh
 	#
