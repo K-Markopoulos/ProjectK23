@@ -19,39 +19,43 @@ class Query{
     // parse query in [FROM]|[WHERE]|[SELECT]
     bool parseQuery(const std::string line);
     //get Relation
-    Relation* getRelation(const int i);
+    Relation* getRelation(const int i) const;
     // get Predicate
-    Predicate* getPredicate(const int i);
+    const Predicate* getPredicate(const int i) const;
     // get Filter
-    Filter* getFilter(const int i);
+    const Filter* getFilter(const int i) const;
     // get Selector
-    Selector* getSelector(const int i);
+    const Selector* getSelector(const int i) const;
     // clear query
     void clear();
 };
 
 class Predicate{
-  Relation* relation1;
-  uint64_t col1;
-  Relation* relation2;
-  uint64_t col2;
-  char op;
   public:
+    Relation* relation1;
+    uint64_t relId1; // relative realtion id
+    uint64_t col1;
+    Relation* relation2;
+    uint64_t relId2; // relative realtion id
+    uint64_t col2;
+    char op;
     Predicate(std::string predicate);
 };
 
 class Filter{
-  Relation* relation;
-  uint64_t col;
-  int64_t value;
-  char op;
   public:
+    Relation* relation;
+    uint64_t relId; // relative realtion id
+    uint64_t col;
+    int64_t value;
+    char op;
     Filter(std::string filter);
 };
 
 class Selector{
-  Relation* relation;
-  uint64_t col;
   public:
+    Relation* relation;
+    uint64_t relId; // relative realtion id
+    uint64_t col;
     Selector(std::string selector);
 };

@@ -104,7 +104,7 @@ relation * createRelation(relation * rel, array_int psum_original){
   //init new_rel
   relation * new_rel = (relation*) malloc(sizeof(relation));
   new_rel->num_tuples = rel->num_tuples;
-  new_rel->tuples = (tuple*) malloc(rel->num_tuples * sizeof(tuple));
+  new_rel->tuples = (tuple_*) malloc(rel->num_tuples * sizeof(tuple_));
 
   //insert tuples to new_rel
   for(int64_t i = 0; i < rel->num_tuples; i++){
@@ -161,7 +161,7 @@ int64_t set_high(hash_table* ht, int64_t index_start){
 
 void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *res_list,bool isReversed) {
   int64_t lg_value,h2_res,index;
-  tuple res_tuple;
+  tuple_ res_tuple;
 
   int64_t sm_low=small->b->low;
   for(int64_t k=large->b->low; k<large->b->high; k++) {
@@ -239,7 +239,7 @@ b_chain * indexingSmallBucket(bucket_hash *small) {
  * @params rel_S, 1st relation as S
  * @returns result list
  */
-result * RadixHashJoin(relation * rel_R, relation * rel_S){
+result * radixHashJoin(relation * rel_R, relation * rel_S){
   //printRelation(rel_R, "R");
   //printRelation(rel_S, "S");
 

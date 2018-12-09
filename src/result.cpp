@@ -7,7 +7,7 @@
 #include "../inc/result.h"
 
 #define RESULT_BLOCK_SIZE 1024*1024
-#define RESULT_BLOCK_MAX_TUPLES (1024*1024 / sizeof(tuple))
+#define RESULT_BLOCK_MAX_TUPLES (1024*1024 / sizeof(tuple_))
 
 
 /**
@@ -45,7 +45,7 @@ void destroyResult(result * res){
  * @params res, the result struct
  * @params data, the tuple struct
  */
-void addToResult(result * res, tuple * data){
+void addToResult(result * res, tuple_ * data){
   if(isFullBlock(res->last)){
     res->num_blocks++;
     block * new_block;
@@ -62,7 +62,7 @@ void addToResult(result * res, tuple * data){
  * @params res, the result struct
  * @params n, index of tuple (starting at 0)
  */
-tuple * getNthResult(result * res, int32_t n){
+tuple_ * getNthResult(result * res, int32_t n){
     int32_t num_block = n / RESULT_BLOCK_MAX_TUPLES;
     int32_t num_tuple = n % RESULT_BLOCK_MAX_TUPLES;
     int32_t block_counter = 0;
@@ -75,7 +75,7 @@ tuple * getNthResult(result * res, int32_t n){
     }
     if(num_block + 1 > bl->num_tuples)
       return NULL;
-    return (tuple *) &bl->tuples[num_tuple];
+    return (tuple_ *) &bl->tuples[num_tuple];
 }
 
 /**
@@ -104,7 +104,7 @@ void printResults(result * res_list){
 void initBlock(block ** bl){
   if(bl != NULL){
     *bl = (block*) malloc(sizeof(block));
-    (*bl)->tuples = (tuple*) malloc(RESULT_BLOCK_SIZE);
+    (*bl)->tuples = (tuple_*) malloc(RESULT_BLOCK_SIZE);
     (*bl)->num_tuples = 0;
     (*bl)->next = NULL;
   }
@@ -126,7 +126,7 @@ void destroyBlock(block * bl){
  * @params block, the block struct
  * @params data, the tuple struct
  */
-void addToBlock(block * block, tuple * data){
+void addToBlock(block * block, tuple_ * data){
   block->tuples[block->num_tuples++] = *data;
 }
 
@@ -158,7 +158,7 @@ int main(int argc, char * argv[]){
   result * res;
   initResult(&res);
 
-  tuple * data = (tuple * ) malloc(sizeof(tuple));
+  tuple_ * data = (tuple_ * ) malloc(sizeof(tuple_));
   std::cout << "------ Pushing -----\n";
 
   for(int i = 0; i < 100; i++){

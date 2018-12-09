@@ -2,7 +2,7 @@
 #include <iostream>
 #include <stdint.h>
 
-typedef struct tuple tuple;
+typedef struct tuple_ tuple_;
 typedef struct relation relation;
 typedef struct hash_table hash_table;
 typedef struct array_int array_int;
@@ -11,13 +11,14 @@ typedef struct result result;
 typedef struct b_chain b_chain;
 typedef struct bucket_hash bucket_hash;
 
-struct tuple {
+
+struct tuple_ {
   uint64_t key;
   uint64_t payload;
 };
 
 struct relation {
-  tuple * tuples;
+  tuple_ * tuples;
   uint64_t num_tuples;
 };
 
@@ -49,7 +50,7 @@ struct bucket_hash {
 
 
 
-result * RadixHashJoin(relation * rel_R, relation * rel_S);
+result * radixHashJoin(relation * rel_R, relation * rel_S);
 void compareBuckets(bucket_hash *sm,bucket_hash *lg,b_chain *bc,result *res_list,bool isReversed);
 b_chain * indexingSmallBucket(bucket_hash *small);
 bool isPrime(uint64_t n);

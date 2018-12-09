@@ -22,12 +22,12 @@ int main(int argc, char* argv[]) {
     rel = db->getRelation(i);
       for(int t = 0; t < rel->getTupleCount(); t++){
         for(int c = 0; c < rel->getColumnCount(); c++){
-        LOG("\nGet tuple [%d][%d] %ld\n", c, t, rel->getTuple(c, t));
-        cout << rel->getTuple(c, t) << '|';
+          LOG("\nGet tuple [%d][%d] %ld\n", c, t, rel->getTuple(c, t));
+          cout << rel->getTuple(c, t) << '|';
       }
       cout << endl;
     }
   }
-  
+
   return 0;
 }

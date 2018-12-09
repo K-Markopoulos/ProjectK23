@@ -4,6 +4,7 @@
 #include <vector>
 #include "../inc/query.hpp"
 #include "../inc/relation.hpp"
+#include "../inc/intermediate.hpp"
 
 class Database;
 
@@ -20,5 +21,9 @@ class Database{
     // get the count of relations
     size_t getRelationsCount();
     // run a query
-    char* run(Query query);
+    char* run(const Query& query);
+    // run a filter
+    void runFilter(const Filter* filter, IntermediateList& results);
+    // run a predicate
+    void runPredicate(const Predicate* predicate, IntermediateList& results);
 };

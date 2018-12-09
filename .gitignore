@@ -1,4 +1,5 @@
 obj/
 join
+runner
 test_*
 !tests

@@ -19,7 +19,24 @@
  *
  */
 Relation::Relation(std::string fileName): sourceFileName(fileName){
+  static int id = 0;
+  this->_id = id++;
+  LOG("Relation ID: %d\n", this->_id);
   this->loadRelation();
+}
+
+/** -----------------------------------------------------
+ * Relation destructor
+ *
+ */
+Relation::~Relation(){
+  // ISSUE: Copies of Relation remove the memory
+  // make sure no copies are made before uncommenting the following code
+
+  // if(this->loaded && munmap(this->memblock, this->memsize) < 0){
+  //   perror("Failed to detach mapped memory");
+  //   exit(2);
+  // }
 }
 
 /** -----------------------------------------------------
@@ -34,6 +51,7 @@ void Relation::loadRelation(){
 
   fd = open(this->sourceFileName.c_str(), O_RDONLY);
   fstat(fd, &sb);
+  this->memsize = sb.st_size;
 
   if((this->memblock = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED){
     perror("Failed to load relation from file");
@@ -51,27 +69,8 @@ void Relation::loadRelation(){
   for(int col = 0; col < this->num_cols; col++){
     LOG("\tAdding col starting with %lu\n", *(uint64_t*)addr);
     this->cols.push_back((void*)addr);
-    LOG("\tChecking col: %lu\n", this->cols.size());
     addr += sizeof(uint64_t) * num_tuples;
   }
-
-  //  ***** MIGHT BE DISCARDED ********
-  // addr = (char*)memblock + 2*sizeof(uint64_t);
-  // //  copy from memory to vector
-  // this->cols_.resize(num_cols);
-  // for(int col = 0; col < this->num_cols; col++){
-  //   this->cols_[col].resize(num_tuples);
-  //   for(int tpl = 0; tpl < this->num_tuples; tpl++){
-  //     this->cols_[col][tpl].key = tpl;
-  //     memcpy(&this->cols_[col][tpl].payload, addr, sizeof(uint64_t));
-  //     addr += sizeof(uint64_t);
-  //   }
-  // }
-  // if(munmap(memblock, sb.st_size) < 0){
-  //   perror("Failed to detach mapped memory");
-  //   exit(2);
-  // }
-  //  ***** /MIGHT BE DISCARDED ******
 
   this->loaded = true;
 
@@ -86,7 +85,16 @@ void Relation::loadRelation(){
  * Get a column pointer from a relation
  *
  */
-void* Relation::getColumn(int col){
+uint64_t Relation::getId() const{
+  return this->_id;
+}
+
+/** -----------------------------------------------------
+ * Get a column pointer from a relation
+ *
+ */
+void* Relation::getColumn(int col) const{
+  assert(col < this->getColumnCount());
   return this->cols[col];
 }
 
@@ -94,7 +102,7 @@ void* Relation::getColumn(int col){
  * Get a column count from a relation
  *
  */
-uint64_t Relation::getColumnCount(){
+uint64_t Relation::getColumnCount() const{
   return this->num_cols;
 }
 
@@ -102,7 +110,7 @@ uint64_t Relation::getColumnCount(){
  * Get a tuple from a relation by column id
  *
  */
-uint64_t Relation::getTuple(int col, int tpl){
+uint64_t Relation::getTuple(int col, int tpl) const{
   assert(col < this->num_cols);
   assert(tpl < this->num_tuples);
   return this->getTuple(this->getColumn(col), tpl);
@@ -112,7 +120,8 @@ uint64_t Relation::getTuple(int col, int tpl){
  * Get a tuple from a relation by column pointer
  *
  */
-uint64_t Relation::getTuple(void* col, int tpl){
+uint64_t Relation::getTuple(const void* col, int tpl) const{
+  //return *((uint64_t*)col + tpl);
   return *((uint64_t*)((char*)col + tpl*sizeof(uint64_t)));
 }
 
@@ -120,6 +129,25 @@ uint64_t Relation::getTuple(void* col, int tpl){
  * Get a tuple count from a relation
  *
  */
-uint64_t Relation::getTupleCount(){
+uint64_t Relation::getTupleCount() const{
   return this->num_tuples;
+}
+
+/** -----------------------------------------------------
+ * Build relation of [rowId,value] tuples
+ *
+ * @params id, id of relation
+ * @returns relation*, (allocated) to be used in radixHashJoin
+ */
+relation* Relation::buildRelation(int col){
+  assert(loaded);
+
+  relation* res = (relation*) malloc(sizeof(relation));
+  res->tuples = (tuple_*) malloc(num_tuples*sizeof(tuple_));
+  res->num_tuples = num_tuples;
+  for(int t = 0; t < num_tuples; t++){
+    res->tuples[t].key = t;
+    res->tuples[t].payload = this->getTuple(col, t);
+  }
+  return res;
 }

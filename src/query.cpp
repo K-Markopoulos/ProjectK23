@@ -23,17 +23,19 @@ bool Query::parseQuery(const string line){
   for(string rel : split(sections[0], ' ')){
     MUST(validateRelation(rel))
     LOG("Relation '%s' OK!\n", rel.c_str());
-    //relations.push_back(db->getRelation(stoi(rel)));
+    relations.emplace_back(db->getRelation(stoi(rel)));
   }
 
   //add predicates and filters
   for(string pred : split(sections[1], '&')){
     MUST(validatePredicate(pred))
     LOG("Predicate '%s' OK!\n", pred.c_str());
-    // if(isFilter(pred))
-    //   filters.emplace_back(Filter(pred));
-    // else
-    //   predicates.emplace_back(Predicate(pred));
+    if(isFilter(pred)){
+      filters.emplace_back(Filter(pred));
+    }
+    else{
+      predicates.emplace_back(Predicate(pred));
+    }
   }
 
   //add selectors
@@ -51,32 +53,40 @@ bool Query::parseQuery(const string line){
 *
 * @params index
 */
-Relation* Query::getRelation(const int index){
-  return relations[index];
+Relation* Query::getRelation(const int index) const{
+  if(index < relations.size())
+    return relations[index];
+  return NULL;
 }
 /** -----------------------------------------------------
 * getter for Predicate
 *
 * @params index
 */
-Predicate* Query::getPredicate(const int index){
-  return &predicates[index];
+const Predicate* Query::getPredicate(const int index) const{
+  if(index < predicates.size())
+    return &predicates[index];
+  return NULL;
 }
 /** -----------------------------------------------------
 * getter for Filter
 *
 * @params index
 */
-Filter* Query::getFilter(const int index){
-  return &filters[index];
+const Filter* Query::getFilter(const int index) const{
+  if(index < filters.size())
+    return &filters[index];
+  return NULL;
 }
 /** -----------------------------------------------------
 * getter for Selector
 *
 * @params index
 */
-Selector* Query::getSelector(const int index){
-  return &selectors[index];
+const Selector* Query::getSelector(const int index) const{
+  if(index < selectors.size())
+    return &selectors[index];
+  return NULL;
 }
 /** -----------------------------------------------------
  * Clears query data
@@ -98,16 +108,16 @@ Predicate::Predicate(string predicate){
   size_t pos_op = predicate.find_first_of("<>="),
       pos_dot = predicate.find('.');
 
-  uint64_t id1 = stoi(predicate.substr(0, pos_dot));
-  this->relation1 = db->getRelation(id1);
-  this->col1 = stoi(predicate.substr(pos_dot+1));
+  relId1 = stoi(predicate.substr(0, pos_dot));
+  this->relation1 = db->getRelation(relId1);
+  this->col1 = stoi(predicate.substr(pos_dot+1, pos_op-pos_dot-1));
 
   this->op = predicate[pos_op];
   pos_dot = predicate.find('.', pos_op);
 
-  uint64_t id2 = stoi(predicate.substr(pos_op+1, pos_dot));
-  this->relation2 = db->getRelation(id2);
-  this->col2 = stoi(predicate.substr(pos_dot));
+  relId2 = stoi(predicate.substr(pos_op+1, pos_dot-pos_op-1));
+  this->relation2 = db->getRelation(relId2);
+  this->col2 = stoi(predicate.substr(pos_dot+1));
 }
 
 /** -----------------------------------------------------
@@ -117,20 +127,19 @@ Predicate::Predicate(string predicate){
 Filter::Filter(string filter){
   size_t pos_op = filter.find_first_of("<>="),
       pos_dot = filter.find('.');
-  uint64_t id;
 
   if(pos_dot < pos_op){
-    id = stoi(filter.substr(0, pos_dot));
+    relId = stoi(filter.substr(0, pos_dot));
     this->col = stoi(filter.substr(pos_dot+1, pos_op-pos_dot-1));
     this->value = stoi(filter.substr(pos_op+1));
   } else {
-    id = stoi(filter.substr(pos_op+1,pos_dot-pos_op-1));
+    relId = stoi(filter.substr(pos_op+1,pos_dot-pos_op-1));
     this->col = stoi(filter.substr(pos_dot+1));
     this->value = stoi(filter.substr(0, pos_op));
   }
 
   this->op = filter[pos_op];
-  this->relation = db->getRelation(id);
+  this->relation = db->getRelation(relId);
 }
 
 /** -----------------------------------------------------
@@ -139,7 +148,7 @@ Filter::Filter(string filter){
  */
 Selector::Selector(string selector){
   size_t pos_dot = selector.find('.');
-  uint64_t id = stoi(selector.substr(0, pos_dot));
+  relId = stoi(selector.substr(0, pos_dot));
   this->col = stoi(selector.substr(pos_dot+1));
-  this->relation = db->getRelation(id);
+  this->relation = db->getRelation(relId);
 }
