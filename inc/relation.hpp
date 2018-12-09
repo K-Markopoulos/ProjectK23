@@ -9,7 +9,7 @@ class Relation{
   bool loaded = false;
   uint64_t num_cols;
   uint64_t num_tuples;
-  std::vector<std::vector<tuple>> cols;
+  std::vector<std::vector<tuple> > cols;
   public:
     Relation(std::string fileName);
     void loadRelation();

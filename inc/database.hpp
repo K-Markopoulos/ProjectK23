@@ -4,6 +4,7 @@
 #include <vector>
 #include "../inc/query.hpp"
 #include "../inc/relation.hpp"
+#include "../inc/intermediate.hpp"
 
 class Database;
 
@@ -19,4 +20,6 @@ class Database{
     Relation* getRelation(int id);
     // run a query
     char* run(Query query);
+    // run a filter
+    void runFilter(Filter, Intermediate*);
 };
