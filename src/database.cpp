@@ -151,6 +151,15 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
   LOG("\nRunning predicate %lu.%lu%c%lu.%lu\n", predicate->relId1, predicate->col1, predicate->op, predicate->relId2, predicate->col2);
   if (predicate->relId1 == predicate->relId2){
     //self join
+    vector<int64_t> rowIDs;
+    int64_t col_size = predicate->relation1->getTupleCount();
+    for(int i = 0; i < col_size; i++)
+      for(int j = 0; j < col_size; j++)
+        if(predicate->relation1->getTuple(predicate->col1, i) == predicate->relation2->getTuple(predicate->col2, j))
+          rowIDs.push_back(j);
+    // Temporary result printing --- To be substituted with proper return value
+    for(int result: rowIDs)
+      std:: cout << result << std:: endl;
   } else {
     // radix hash join
     relation* rel1, *rel2;
