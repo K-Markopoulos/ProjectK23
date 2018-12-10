@@ -29,5 +29,6 @@ int main(int argc, char* argv[]) {
     cout << db->run(query);
     query.clear();
   }
+  cout << endl;
   return 0;
 }

@@ -26,6 +26,7 @@ IntermediateList::IntermediateList(const Query& query_): query(query_){}
  */
 Intermediate* IntermediateList::getIntermediate(int id){
   assert(id < getIntermediateCount());
+  active = list.begin() + id;
   return &list[id];
 }
 
@@ -36,10 +37,13 @@ Intermediate* IntermediateList::getIntermediate(int id){
  * @returns Intermediate*
  */
 Intermediate* IntermediateList::getIntermediateByRel(int relId){
+  uint64_t id = 0;
   for(Intermediate& intermediate : list){
     if(intermediate.isLoaded(relId)){
+      active = list.begin() + id;
       return &intermediate;
     }
+    id++;
   }
   return NULL;
 }
@@ -60,7 +64,17 @@ uint64_t IntermediateList::getIntermediateCount(){
  */
 Intermediate* IntermediateList::createIntermediate(){
   list.emplace_back(Intermediate(query));
+  active = list.end();
   return &list[list.size()-1];
+}
+
+/** -----------------------------------------------------
+ * Removes active intermediate, the one just used
+ *
+ */
+void IntermediateList::removeActive(){
+  LOG("\t\t-removing intermediate\n");
+  list.erase(active);
 }
 
 
@@ -76,7 +90,7 @@ Intermediate::Intermediate(const Query& query){
   }
   loaded.assign(i-1, false);
   rowIds.resize(i-1);
-  LOG("\t\t-Creating new intermediate %lu\n", rowIds.size());
+  LOG("\t\t+Creating new intermediate size:%lu\n", rowIds.size());
 }
 
 /** -----------------------------------------------------
@@ -91,13 +105,36 @@ std::vector<uint64_t>* Intermediate::getColumn(int id){
 }
 
 /** -----------------------------------------------------
+ * Update intermediate base on column
+ *
+ * @params id
+ * @params new_column, vector of uint64_t
+ */
+void Intermediate::update(int col, std::vector<uint64_t>* new_column){
+  LOG("\t\t^Updating intermediate based on column %d\n", col);
+  assert(col < rowIds.size());
+  assert(loaded[col]);
+  assert(new_column->size());
+  bool should_erase;
+
+  for(uint64_t r = 0; r < new_column->size(); r++){
+    should_erase = rowIds[col][r] == new_column->at(r);
+    for(uint64_t c = 0; c < rowIds.size(); c++){
+      if(loaded[c] && should_erase){
+        rowIds[c].erase(rowIds[c].begin() + r--);
+      }
+    }
+  }
+}
+
+/** -----------------------------------------------------
  * Update column in intermediate
  *
  * @params id
  * @params new_column, vector of uint64_t
  */
 void Intermediate::updateColumn(int col, std::vector<uint64_t>* new_column){
-  LOG("\t\t-Updating intermediate column %d\n", col);
+  LOG("\t\t^Updating intermediate column %d\n", col);
   assert(col < rowIds.size());
   loaded[col] = true;
   rowIds[col] = *new_column;
@@ -133,4 +170,40 @@ relation* Intermediate::buildRelation(int id, int col){
     res->tuples[i].payload = rel->getTuple(col, rowIds[id][i]);
   }
   return res;
+}
+
+/** -----------------------------------------------------
+ * Pretty print for debuging
+ *
+ */
+void Intermediate::print(){
+  printf("\n**** Intermediate Print *****\n");
+  for(uint64_t id : relationsIds){
+      printf("%lu-", id);
+  }
+  printf("\n_____________________________\n");
+
+  int64_t col = -1;
+  for(uint64_t i = 0; i < loaded.size(); i++){
+    if(loaded[i]){
+      col = i;
+      break;
+    }
+  }
+
+  if(col == -1){
+    printf("-- empty --\n");
+    return;
+  }
+
+  for(uint64_t r = 0; r < rowIds[col].size(); r++){
+    for(uint64_t c = 0; c < rowIds.size(); c++){
+      if(loaded[c])
+        printf("%lu|", rowIds[c][r]);
+      else
+        printf("-|");
+    }
+    printf("\n");
+  }
+  printf("**** /Intermediate Print *****\n\n");
 }

@@ -73,13 +73,14 @@ char* Database::run(const Query& query){
     runPredicate(predicate, intermediateList);
   }
 
-  // //  run selectors  (sums)
+  // //  run selectors  (sums), for now print final intermediate results
+  if(!intermediateList.getIntermediateCount())
+    return "NULL";
+  for(int i = 0; i < intermediateList.getIntermediateCount(); i++){
+    intermediateList.getIntermediate(i)->print();
+  }
 
 
-  //NOT IMPLEMENTED
-  //shhhhhhhhhhhh
-  cout << "Running ...\n";
-  sleep(3);
   cout << "Done\n";
   return NULL;
 }
@@ -121,7 +122,10 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
       // else { LOG("\t\trowId:%lu, value:%ld NOOOOOOOOOOT\n", (*column)[t], value);}
     }
     // update intermediate
-    intermediate->updateColumn(filter->relId, &new_column);
+    if(new_column.size())
+      intermediate->update(filter->relId, &new_column);
+    else
+      results.removeActive();
   } else {
     // create new intermediate
     intermediate = results.createIntermediate();
@@ -136,7 +140,10 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
       }
       // else { LOG("\t\trowId:%d, value:%ld N000000000000T\n", t, value);}
     }
-    intermediate->updateColumn(filter->relId, &new_column);
+    if(new_column.size())
+      intermediate->updateColumn(filter->relId, &new_column);
+    else
+      results.removeActive();
   }
 
 }
