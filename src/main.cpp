@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
       cout << "Invalid query, skipping...\n";
       continue;
     }
-    printf("%s\n", db->run(query));
+    cout << db->run(query).c_str() << endl;
     query.clear();
   }
   cout << endl;

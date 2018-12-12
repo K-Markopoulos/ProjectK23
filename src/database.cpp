@@ -54,7 +54,7 @@ size_t Database::getRelationsCount(){
  * @params query
  * @returns char*, result from query
  */
-char const * Database::run(const Query& query){
+string Database::run(const Query& query){
   //  initialize Intermmediate results
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
@@ -74,20 +74,20 @@ char const * Database::run(const Query& query){
   }
 
   string response;
-  // //  run selectors  (sums), for now print final intermediate results
+  //  run selectors (sums)
   const Selector* selector;
   int sCount = 0;
   while(selector = query.getSelector(sCount++)){
     string temp_response = runSelector(selector, intermediateList);
-    response +=  (temp_response.empty()? string("NULL"):temp_response) + ' ';
+    response += (temp_response.empty()? string("NULL"):temp_response) + ' ';
   }
 
-  LOG("DONE! ----------- SHOWING INTERMEDIATES -----------\n");
-  for(int i = 0; i < intermediateList.getIntermediateCount(); i++){
-    intermediateList.getIntermediate(i)->print();
-  }
+  return response;
 
-  return response.c_str();
+  // LOG("DONE! ----------- SHOWING INTERMEDIATES -----------\n");
+  // for(int i = 0; i < intermediateList.getIntermediateCount(); i++){
+  //   intermediateList.getIntermediate(i)->print();
+  // }
 }
 
 /** -----------------------------------------------------
@@ -193,10 +193,10 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
     Intermediate* intermediate1, * intermediate2;
 
     rel1 = (intermediate1 = results.getIntermediateByRel(predicate->relId1))?
-      intermediate1->buildRelation(predicate->relId1, predicate->col1):
+      intermediate1->buildRelation(predicate->relation1, predicate->relId1, predicate->col1):
       predicate->relation1->buildRelation(predicate->col1);
     rel2 = (intermediate2 = results.getIntermediateByRel(predicate->relId2))?
-      intermediate2->buildRelation(predicate->relId2, predicate->col2):
+      intermediate2->buildRelation(predicate->relation2, predicate->relId2, predicate->col2):
       predicate->relation2->buildRelation(predicate->col2);
 
     result* res = radixHashJoin(rel1, rel2);

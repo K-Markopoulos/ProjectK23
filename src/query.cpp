@@ -134,10 +134,10 @@ bool Query::parseQuery(const string line){
     MUST(validatePredicate(pred))
     LOG("Predicate '%s' OK!\n", pred.c_str());
     if(isFilter(pred)){
-      filters.emplace_back(Filter(pred));
+      filters.emplace_back(Filter(pred, this));
     }
     else{
-      predicates.emplace_back(Predicate(pred));
+      predicates.emplace_back(Predicate(pred, this));
     }
   }
 
@@ -145,7 +145,7 @@ bool Query::parseQuery(const string line){
   for(string sel : split(sections[2], ' ')){
     MUST(validateSelector(sel))
     LOG("Selector '%s' OK!\n", sel.c_str());
-    selectors.emplace_back(Selector(sel));
+    selectors.emplace_back(Selector(sel, this));
   }
 
   return true;
@@ -220,19 +220,19 @@ void Query::clear(){
  * Predicate constructor
  *
  */
-Predicate::Predicate(string predicate){
+Predicate::Predicate(string predicate, Query* query){
   size_t pos_op = predicate.find_first_of("<>="),
       pos_dot = predicate.find('.');
 
   relId1 = stoi(predicate.substr(0, pos_dot));
-  this->relation1 = db->getRelation(relId1);
+  this->relation1 = query->getRelation(relId1);
   this->col1 = stoi(predicate.substr(pos_dot+1, pos_op-pos_dot-1));
 
   this->op = predicate[pos_op];
   pos_dot = predicate.find('.', pos_op);
 
   relId2 = stoi(predicate.substr(pos_op+1, pos_dot-pos_op-1));
-  this->relation2 = db->getRelation(relId2);
+  this->relation2 =query->getRelation(relId2);
   this->col2 = stoi(predicate.substr(pos_dot+1));
 }
 
@@ -240,7 +240,7 @@ Predicate::Predicate(string predicate){
  * Filter constructor
  *
  */
-Filter::Filter(string filter){
+Filter::Filter(string filter, Query* query){
   size_t pos_op = filter.find_first_of("<>="),
       pos_dot = filter.find('.');
 
@@ -255,16 +255,16 @@ Filter::Filter(string filter){
   }
 
   this->op = filter[pos_op];
-  this->relation = db->getRelation(relId);
+  this->relation = query->getRelation(relId);
 }
 
 /** -----------------------------------------------------
  * Selector constructor
  *
  */
-Selector::Selector(string selector){
+Selector::Selector(string selector, Query* query){
   size_t pos_dot = selector.find('.');
   relId = stoi(selector.substr(0, pos_dot));
   this->col = stoi(selector.substr(pos_dot+1));
-  this->relation = db->getRelation(relId);
+  this->relation = query->getRelation(relId);
 }

@@ -21,7 +21,7 @@ class Database{
     // get the count of relations
     size_t getRelationsCount();
     // run a query
-    char const * run(const Query& query);
+    std::string run(const Query& query);
     // run a filter
     void runFilter(const Filter* filter, IntermediateList& results);
     // run a predicate

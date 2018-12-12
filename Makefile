@@ -20,6 +20,11 @@ CCFLAGS = -std=c++11 -g3
 
 $(EXE): directories $(OBJ)
 	$(CC) -o $@ $(OBJ) $(CCFLAGS)
+	#
+	#	OK! now try the dataset by typing:
+	#
+	#	./runner < init
+	#
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) $(CCFLAGS) -c $< -o $@

@@ -51,7 +51,7 @@ class Predicate{
     uint64_t relId2; // relative realtion id
     uint64_t col2;
     char op;
-    Predicate(std::string predicate);
+    Predicate(std::string predicate, Query* query);
 };
 
 class Filter{
@@ -61,7 +61,7 @@ class Filter{
     uint64_t col;
     int64_t value;
     char op;
-    Filter(std::string filter);
+    Filter(std::string filter, Query* query);
 };
 
 class Selector{
@@ -69,5 +69,5 @@ class Selector{
     Relation* relation;
     uint64_t relId; // relative realtion id
     uint64_t col;
-    Selector(std::string selector);
+    Selector(std::string selector, Query* query);
 };

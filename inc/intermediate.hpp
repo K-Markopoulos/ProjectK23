@@ -23,7 +23,7 @@ class Intermediate{
     // checks if is loaded in intermediate
     bool isLoaded(int id);
     // build relation with [rowId,value] tuples
-    relation* buildRelation(int id, int col);
+    relation* buildRelation(Relation* rel, int id, int col);
     // print intermediate for debuging
     void print();
 };
