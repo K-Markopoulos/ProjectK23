@@ -79,7 +79,6 @@ Intermediate::Intermediate(const Query& query){
   loaded.assign(i-1, false);
   rowIds.resize(i-1);
   LOG("\t\t+Creating new intermediate size:%lu\n", rowIds.size());
-  LOG("\t\trowids size %lu %lu %lu\n", rowIds.size(), loaded.size(), relationsIds.size());
 }
 
 /** -----------------------------------------------------

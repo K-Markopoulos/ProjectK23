@@ -26,4 +26,6 @@ class Database{
     void runFilter(const Filter* filter, IntermediateList& results);
     // run a predicate
     void runPredicate(const Predicate* predicate, IntermediateList& results);
+    // run a selector
+    std::string runSelector(const Selector* selector, IntermediateList& results);
 };

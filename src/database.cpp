@@ -73,20 +73,31 @@ char const * Database::run(const Query& query){
     runPredicate(predicate, intermediateList);
   }
 
+  string response;
   // //  run selectors  (sums), for now print final intermediate results
-  if(!intermediateList.getIntermediateCount())
-    return "NULL";
+  const Selector* selector;
+  int sCount = 0;
+  while(selector = query.getSelector(sCount++)){
+    string temp_response = runSelector(selector, intermediateList);
+    response +=  (temp_response.empty()? string("NULL"):temp_response) + ' ';
+  }
 
   LOG("DONE! ----------- SHOWING INTERMEDIATES -----------\n");
   for(int i = 0; i < intermediateList.getIntermediateCount(); i++){
     intermediateList.getIntermediate(i)->print();
   }
 
-
-  cout << "Done\n";
-  return NULL;
+  return response.c_str();
 }
 
+/** -----------------------------------------------------
+ * Compares 2 values based on operator.
+ * This is a helper for runFilter function.
+ *
+ * @params op, character within ['>','<','=']
+ * @params v1, first value
+ * @params v2, second value
+ */
 inline bool op(char op, uint64_t v1, uint64_t v2){
   switch(op){
     case '>':
@@ -102,7 +113,7 @@ inline bool op(char op, uint64_t v1, uint64_t v2){
  * Runs the filter using RadixHashJoin and returns the result
  *
  * @params filter, results
- * @returns
+ * @params results, IntermediateList
  */
 void Database::runFilter(const Filter* filter, IntermediateList& results){
   LOG("\tRunning filter ..%c%ld\n",filter->op, filter->value);
@@ -116,7 +127,6 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
     for(int t = 0; t < column->size(); t++){
       int64_t value = filter->relation->getTuple(filter->col, (*column)[t]);
       if(op(filter->op, value, filter->value)){
-        LOG("\t\trowId:%lu, value:%ld\n", (*column)[t], value);
         new_column.push_back((*column)[t]);
       }
       // else { LOG("\t\trowId:%lu, value:%ld NOOOOOOOOOOT\n", (*column)[t], value);}
@@ -131,7 +141,6 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
     for(int t = 0; t < filter->relation->getTupleCount(); t++){
       int64_t value = filter->relation->getTuple(filter->col, t);
       if(op(filter->op, value, filter->value)){
-        LOG("\t\trowId:%d, value:%ld\n", t, value);
         // push to new intermediate
         new_column.push_back(t);
       }
@@ -143,10 +152,10 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
 }
 
 /** -----------------------------------------------------
- * Runs the predicate and merges to Intermediate
+ * Runs the predicate and merges the result into Intermediate results
  *
- * @params predicate, predicate to run
- * @params results, Intermediate results
+ * @params predicate, Predicate to run
+ * @params results, IntermediateList
  */
 void Database::runPredicate(const Predicate* predicate, IntermediateList& results){
   LOG("Running predicate %lu.%lu%c%lu.%lu\n", predicate->relId1, predicate->col1, predicate->op, predicate->relId2, predicate->col2);
@@ -205,9 +214,30 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       LOG("\tfound intermediate2, updating 2\n");
       intermediate2->update(predicate->relId1, predicate->relId2, res);
     } else{
-      LOG("\tfound both intermediate1 and intermediate2, updating both\n");
+      LOG("\tfound both intermediate1 and intermediate2, updating both (should I?)\n");
       intermediate1->update(predicate->relId1, predicate->relId2, res);
       intermediate2->update(predicate->relId1, predicate->relId2, res);
     }
   }
+}
+
+string Database::runSelector(const Selector* selector, IntermediateList& results){
+  LOG("Running selector %lu.%lu\n", selector->relId, selector->col);
+
+  Intermediate* intermediate = results.getIntermediateByRel(selector->relId);
+  uint64_t sum = 0;
+
+  if(intermediate){
+    vector<uint64_t>* column = intermediate->getColumn(selector->relId);
+    if(column->size() == 0)
+      return "";
+    for(int t = 0; t < column->size(); t++)
+      sum += selector->relation->getTuple(selector->col, (*column)[t]);
+  } else {
+    LOG("\tOOPS retreiving raw relation from db (not need to have run predicates on that relation)\n");
+    for(int t = 0; t < selector->relation->getTupleCount(); t++)
+      sum += selector->relation->getTuple(selector->col, t);
+  }
+  LOG("\t>sum:%lu\n", sum);
+  return to_string(sum);
 }
