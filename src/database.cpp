@@ -54,7 +54,7 @@ size_t Database::getRelationsCount(){
  * @params query
  * @returns char*, result from query
  */
-char* Database::run(const Query& query){
+char const * Database::run(const Query& query){
   //  initialize Intermmediate results
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
@@ -105,9 +105,7 @@ inline bool op(char op, uint64_t v1, uint64_t v2){
 void Database::runFilter(const Filter* filter, IntermediateList& results){
   LOG("\tRunning filter ..%c%ld\n",filter->op, filter->value);
 
-  relation* rel1, *rel2;
   Intermediate* intermediate = results.getIntermediateByRel(filter->relId);
-  Relation* relation;
   if(intermediate){
     // pull data from intermediate
     vector<uint64_t>* column = intermediate->getColumn(filter->relId);
@@ -122,10 +120,7 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
       // else { LOG("\t\trowId:%lu, value:%ld NOOOOOOOOOOT\n", (*column)[t], value);}
     }
     // update intermediate
-    if(new_column.size())
-      intermediate->update(filter->relId, &new_column);
-    else
-      results.removeActive();
+    intermediate->update(filter->relId, &new_column);
   } else {
     // create new intermediate
     intermediate = results.createIntermediate();
@@ -140,10 +135,7 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
       }
       // else { LOG("\t\trowId:%d, value:%ld N000000000000T\n", t, value);}
     }
-    if(new_column.size())
-      intermediate->updateColumn(filter->relId, &new_column);
-    else
-      results.removeActive();
+    intermediate->updateColumn(filter->relId, &new_column);
   }
 
 }
@@ -155,31 +147,58 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
  * @params results, Intermediate results
  */
 void Database::runPredicate(const Predicate* predicate, IntermediateList& results){
-  LOG("\nRunning predicate %lu.%lu%c%lu.%lu\n", predicate->relId1, predicate->col1, predicate->op, predicate->relId2, predicate->col2);
+  LOG("Running predicate %lu.%lu%c%lu.%lu\n", predicate->relId1, predicate->col1, predicate->op, predicate->relId2, predicate->col2);
   if (predicate->relId1 == predicate->relId2){
+    LOG("\tIts a self join\n");
     //self join
-    vector<int64_t> rowIDs;
-    int64_t col_size = predicate->relation1->getTupleCount();
-    for(int i = 0; i < col_size; i++)
-      for(int j = 0; j < col_size; j++)
-        if(predicate->relation1->getTuple(predicate->col1, i) == predicate->relation2->getTuple(predicate->col2, j))
-          rowIDs.push_back(j);
-    // Temporary result printing --- To be substituted with proper return value
-    for(int result: rowIDs)
-      std:: cout << result << std:: endl;
+    Intermediate* intermediate = results.getIntermediateByRel(predicate->relId1);
+    if(intermediate){
+      vector<uint64_t>* column = intermediate->getColumn(predicate->relId1);
+      vector<uint64_t> new_column;
+
+      for(uint64_t t = 0; t < column->size(); t++)
+          if(predicate->relation1->getTuple(predicate->col1, (*column)[t]) ==
+          predicate->relation2->getTuple(predicate->col2, (*column)[t])){
+            LOG("\tmatching row %lu\n", (*column)[t]);
+            new_column.push_back((*column)[t]);
+          }
+      intermediate->update(predicate->relId1, &new_column);
+    } else {
+      intermediate = results.createIntermediate();
+      vector<uint64_t> new_column;
+
+      for(uint64_t t = 0; t < predicate->relation1->getTupleCount(); t++)
+          if(predicate->relation1->getTuple(predicate->col1, t) ==
+          predicate->relation2->getTuple(predicate->col2, t)){
+            LOG("\tmatching row %lu\n", t);
+            new_column.push_back(t);
+          }
+      intermediate->updateColumn(predicate->relId1, &new_column);
+    }
   } else {
     // radix hash join
+    LOG("\tIts a join\n");
     relation* rel1, *rel2;
-    Intermediate* intermediate;
-    rel1 = (intermediate = results.getIntermediateByRel(predicate->relId1))?
-      intermediate->buildRelation(predicate->relId1, predicate->col1):
+    Intermediate* intermediate1, * intermediate2;
+
+    rel1 = (intermediate1 = results.getIntermediateByRel(predicate->relId1))?
+      intermediate1->buildRelation(predicate->relId1, predicate->col1):
       predicate->relation1->buildRelation(predicate->col1);
-    rel2 = (intermediate = results.getIntermediateByRel(predicate->relId2))?
-      intermediate->buildRelation(predicate->relId2, predicate->col2):
+    rel2 = (intermediate2 = results.getIntermediateByRel(predicate->relId2))?
+      intermediate2->buildRelation(predicate->relId2, predicate->col2):
       predicate->relation2->buildRelation(predicate->col2);
 
     result* res = radixHashJoin(rel1, rel2);
-    printResults(res);
-    // merge res to intermediate results
+
+    LOG("\tmatching %u rows\n", res->num_blocks);
+
+    if(!intermediate1)
+      intermediate1 = results.createIntermediate();
+    intermediate1->update(predicate->relId1, res);
+
+    if(!intermediate2)
+      intermediate2 = results.createIntermediate();
+    if(intermediate1 != intermediate2)
+      intermediate2->update(predicate->relId2, res);
   }
 }

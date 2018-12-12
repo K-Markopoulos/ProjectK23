@@ -16,6 +16,8 @@ class Intermediate{
     std::vector<uint64_t>* getColumn(int id);
     // update intermediate based on new column
     void update(int col, std::vector<uint64_t>* new_column);
+    // update intermediate based on struct result
+    void update(int col, result* results);
     // update column in intermediate
     void updateColumn(int col, std::vector<uint64_t>* new_column);
     // checks if is loaded in intermediate
@@ -40,6 +42,4 @@ class IntermediateList{
     uint64_t getIntermediateCount();
     // create new intermediate
     Intermediate* createIntermediate();
-    // remove Intermediate just used
-    void removeActive();
 };

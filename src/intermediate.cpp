@@ -9,6 +9,7 @@
 #include "../inc/query.hpp"
 #include "../inc/utils.hpp"
 #include "../inc/radix.h"
+#include "../inc/result.h"
 
 using namespace std;
 
@@ -26,7 +27,6 @@ IntermediateList::IntermediateList(const Query& query_): query(query_){}
  */
 Intermediate* IntermediateList::getIntermediate(int id){
   assert(id < getIntermediateCount());
-  active = list.begin() + id;
   return &list[id];
 }
 
@@ -40,7 +40,6 @@ Intermediate* IntermediateList::getIntermediateByRel(int relId){
   uint64_t id = 0;
   for(Intermediate& intermediate : list){
     if(intermediate.isLoaded(relId)){
-      active = list.begin() + id;
       return &intermediate;
     }
     id++;
@@ -64,19 +63,8 @@ uint64_t IntermediateList::getIntermediateCount(){
  */
 Intermediate* IntermediateList::createIntermediate(){
   list.emplace_back(Intermediate(query));
-  active = list.end();
   return &list[list.size()-1];
 }
-
-/** -----------------------------------------------------
- * Removes active intermediate, the one just used
- *
- */
-void IntermediateList::removeActive(){
-  LOG("\t\t-removing intermediate\n");
-  list.erase(active);
-}
-
 
 /** -----------------------------------------------------
  * Intermediate constructor
@@ -91,6 +79,7 @@ Intermediate::Intermediate(const Query& query){
   loaded.assign(i-1, false);
   rowIds.resize(i-1);
   LOG("\t\t+Creating new intermediate size:%lu\n", rowIds.size());
+  LOG("\t\trowids size %lu %lu %lu\n", rowIds.size(), loaded.size(), relationsIds.size());
 }
 
 /** -----------------------------------------------------
@@ -114,7 +103,14 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
   LOG("\t\t^Updating intermediate based on column %d\n", col);
   assert(col < rowIds.size());
   assert(loaded[col]);
-  assert(new_column->size());
+
+  if(!new_column->size()){
+    LOG("\t\t!No matches for intermediate\n");
+    for(uint64_t c = 0; c < relationsIds.size(); c++)
+      if(loaded[c]) rowIds[c].clear();
+    return;
+  }
+
   bool should_erase;
 
   for(uint64_t r = 0; r < new_column->size(); r++){
@@ -124,6 +120,46 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
         rowIds[c].erase(rowIds[c].begin() + r--);
       }
     }
+  }
+}
+
+/** ----------------------------------------------------- TODOOOOOOOOOO
+ * Update intermediate based on col and struct result
+ *
+ * @params col
+ * @params results, struct result (returned fron RadixHashJoin)
+ */
+void Intermediate::update(int col, result* results){
+  LOG("\t\t^Updating intermediate based on column %d and struct result\n", col);
+  assert(col < rowIds.size());
+
+  if(!results->num_blocks){
+    LOG("\t\t!No matches for intermediate\n");
+    for(uint64_t c = 0; c < relationsIds.size(); c++)
+      if(loaded[c]) rowIds[c].clear();
+    return;
+  }
+
+  if(!loaded[col]){
+    loaded[col] = true;
+    for(uint64_t r = 0; r < results->num_blocks; r++){
+      rowIds[col].push_back(getNthResult(results, r)->key);
+    }
+    return;
+  }
+
+  bool should_erase;
+
+  for(uint64_t r = 0; r < results->num_blocks; r++){
+    LOG("\t\trow %lu\n", r);
+    should_erase = loaded[col] && rowIds[col][r] == getNthResult(results, r)->key;
+    //LOG("\t\terase rowId %lu? %c\n", rowIds[col][r], should_erase?'Y':'N');
+    for(uint64_t c = 0; c < rowIds.size(); c++){
+      if(loaded[c] && should_erase){
+        rowIds[c].erase(rowIds[c].begin() + r);
+      }
+    }
+    if(should_erase) r--;
   }
 }
 
@@ -137,7 +173,8 @@ void Intermediate::updateColumn(int col, std::vector<uint64_t>* new_column){
   LOG("\t\t^Updating intermediate column %d\n", col);
   assert(col < rowIds.size());
   loaded[col] = true;
-  rowIds[col] = *new_column;
+  if(new_column->size())
+    rowIds[col] = *new_column;
 }
 
 /** -----------------------------------------------------
@@ -178,9 +215,11 @@ relation* Intermediate::buildRelation(int id, int col){
  */
 void Intermediate::print(){
   printf("\n**** Intermediate Print *****\n");
-  for(uint64_t id : relationsIds){
-      printf("%lu-", id);
-  }
+  for(uint64_t id : relationsIds)
+    printf("%lu-", id);
+  printf("\n");
+  for(bool load : loaded)
+    printf("%c-", load ? 'Y':'N');
   printf("\n_____________________________\n");
 
   int64_t col = -1;
@@ -193,6 +232,7 @@ void Intermediate::print(){
 
   if(col == -1){
     printf("-- empty --\n");
+    printf("**** /Intermediate Print *****\n\n");
     return;
   }
 
