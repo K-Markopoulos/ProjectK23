@@ -57,26 +57,31 @@ bool Query::validatePredicate(const string& predicate){
   MUST((pos_operator=predicate.find_first_of("<>=")) == predicate.find_last_of("<>=")) // only one operator
   string part1 = predicate.substr(0, pos_operator);
   string part2 = predicate.substr(pos_operator+1);
-  MUST(part1.find_first_not_of(".0123456789") == string::npos) // only digits and dot
-  MUST(part2.find_first_not_of(".0123456789") == string::npos) // only digits and dot
+  MUST(part1.find_first_not_of("-.0123456789") == string::npos) // only digits and dot
+  MUST(part2.find_first_not_of("-.0123456789") == string::npos) // only digits and dot
   int relCount = relations.size();
   bool at_least_one_column = false;
   if((pos_dot=part1.find('.')) != string::npos){
     MUST(pos_dot == part1.rfind('.')) // only one dot
     MUST(pos_dot != 0 && pos_dot != part1.size()-1) // dot not first or last
     int rel = stoi(part1.substr(0,pos_dot));
+    MUST(rel >= 0);
     int colCount = relations[rel]->getColumnCount();
     MUST(rel < relCount) // relation's index < total relations
-    MUST(stoi(part1.substr(pos_dot+1)) < colCount) // relation's column < total relation's columns
+    int col = stoi(part1.substr(pos_dot+1));
+    MUST(col >= 0);
+    MUST(col < colCount) // relation's column < total relation's columns
     at_least_one_column = true;
   }
   if((pos_dot=part2.find('.')) != string::npos){
     MUST(pos_dot == part2.rfind('.')) // only one dot
     MUST(pos_dot != 0 && pos_dot != part2.size()-1) // dot not first or last
     int rel = stoi(part2.substr(0,pos_dot));
+    MUST(rel >= 0);
     int colCount = relations[rel]->getColumnCount();
     MUST(rel < relCount) // relation's index < total relations
-    MUST(stoi(part2.substr(pos_dot+1)) < colCount) // relation's column < total relation's columns
+    int col = stoi(part2.substr(pos_dot+1));
+    MUST(col < colCount) // relation's column < total relation's columns
     at_least_one_column = true;
   }
   MUST(at_least_one_column)
