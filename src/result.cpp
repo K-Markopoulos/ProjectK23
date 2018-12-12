@@ -21,6 +21,7 @@ void initResult(result ** res){
     initBlock(&(*res)->head);
     (*res)->last = (*res)->head;
     (*res)->num_blocks = 1;
+    (*res)->num_tuples = 0;
   }
 }
 
@@ -46,6 +47,7 @@ void destroyResult(result * res){
  * @params data, the tuple struct
  */
 void addToResult(result * res, tuple_ * data){
+  res->num_tuples++;
   if(isFullBlock(res->last)){
     res->num_blocks++;
     block * new_block;

@@ -17,7 +17,7 @@ class Intermediate{
     // update intermediate based on new column
     void update(int col, std::vector<uint64_t>* new_column);
     // update intermediate based on struct result
-    void update(int col, result* results);
+    void update(int col1, int col2, result* results);
     // update column in intermediate
     void updateColumn(int col, std::vector<uint64_t>* new_column);
     // checks if is loaded in intermediate

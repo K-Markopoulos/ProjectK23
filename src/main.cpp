@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     if (line == "Done" || line.empty()) break;
     db->addRelation("./workloads/small/"+line);
   }
-  LOG("\nREADING QUERIES\n\n\n");
+  LOG("\n\n\nREADING QUERIES\n\n\n");
   Query query;
   while (getline(cin, line)) {
     if (line == "F" || line.empty()) {

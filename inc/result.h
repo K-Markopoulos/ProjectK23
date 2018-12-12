@@ -8,6 +8,7 @@ struct result {
   block * head;
   block * last;
   uint32_t num_blocks;
+  uint64_t num_tuples;
 };
 
 struct block {

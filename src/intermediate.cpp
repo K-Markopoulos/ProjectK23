@@ -129,38 +129,52 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
  * @params col
  * @params results, struct result (returned fron RadixHashJoin)
  */
-void Intermediate::update(int col, result* results){
-  LOG("\t\t^Updating intermediate based on column %d and struct result\n", col);
-  assert(col < rowIds.size());
+void Intermediate::update(int col1, int col2, result* results){
+  LOG("\t\t^Updating intermediate based on columns %d,%d and struct result\n", col1, col2);
+  assert(col1 < rowIds.size());
+  assert(col2 < rowIds.size());
 
-  if(!results->num_blocks){
+  if(!results->num_tuples){
     LOG("\t\t!No matches for intermediate\n");
     for(uint64_t c = 0; c < relationsIds.size(); c++)
       if(loaded[c]) rowIds[c].clear();
     return;
   }
 
-  if(!loaded[col]){
-    loaded[col] = true;
-    for(uint64_t r = 0; r < results->num_blocks; r++){
-      rowIds[col].push_back(getNthResult(results, r)->key);
+  // if none loaded there its a new intermediate
+  if (!loaded[col1] && !loaded[col2]){
+    for(uint64_t r = 0; r < results->num_tuples; r++){
+      tuple_* tuple = getNthResult(results, r);
+      rowIds[col1].push_back(tuple->key);
+      rowIds[col2].push_back(tuple->payload);
     }
-    return;
-  }
+  } else {
+    int col = loaded[col1] ? col1 : col2;
+    vector<vector<uint64_t>> new_rowIds;
+    new_rowIds.resize(rowIds.size());
+    for(vector<uint64_t> v : new_rowIds)
+      v.reserve(results->num_tuples);
+    uint64_t r = 0;
 
-  bool should_erase;
-
-  for(uint64_t r = 0; r < results->num_blocks; r++){
-    LOG("\t\trow %lu\n", r);
-    should_erase = loaded[col] && rowIds[col][r] == getNthResult(results, r)->key;
-    //LOG("\t\terase rowId %lu? %c\n", rowIds[col][r], should_erase?'Y':'N');
-    for(uint64_t c = 0; c < rowIds.size(); c++){
-      if(loaded[c] && should_erase){
-        rowIds[c].erase(rowIds[c].begin() + r);
+    for(uint64_t t = 0; t < results->num_tuples; t++){
+      tuple_* tuple = getNthResult(results, t);
+      //r = 0;
+      while(rowIds[col][r++] != (col==col1?tuple->key:tuple->payload));
+      for(uint64_t c = 0; c < rowIds.size(); c++){
+        if(loaded[c])
+          new_rowIds[c].push_back(rowIds[c][r]);
+        else if(c==col1)
+          new_rowIds[c].push_back(tuple->key);
+        else if(c==col1)
+          new_rowIds[c].push_back(tuple->payload);
       }
     }
-    if(should_erase) r--;
+    rowIds = new_rowIds;
   }
+  loaded[col1] = true;
+  loaded[col2] = true;
+  LOG("\t\t^Updated\n");
+  //print();
 }
 
 /** -----------------------------------------------------
@@ -195,6 +209,7 @@ bool Intermediate::isLoaded(int id){
  * @returns relation*, (allocated) to be used in radixHashJoin
  */
 relation* Intermediate::buildRelation(int id, int col){
+  LOG("\t\tbuilding relation %d fromn intermediate\n", id);
   assert(id < rowIds.size());
   assert(isLoaded(id));
 
@@ -203,6 +218,7 @@ relation* Intermediate::buildRelation(int id, int col){
   res->tuples = (tuple_*) malloc(rowIds[id].size()*sizeof(tuple_));
   res->num_tuples = rowIds[id].size();
   for(int i = 0; i < rowIds[id].size(); i++){
+    //LOG("\t\tgetting tuple (%lu)\n", rowIds[id][i]);
     res->tuples[i].key = rowIds[id][i];
     res->tuples[i].payload = rel->getTuple(col, rowIds[id][i]);
   }

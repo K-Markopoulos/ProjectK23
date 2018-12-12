@@ -76,6 +76,8 @@ char const * Database::run(const Query& query){
   // //  run selectors  (sums), for now print final intermediate results
   if(!intermediateList.getIntermediateCount())
     return "NULL";
+
+  LOG("DONE! ----------- SHOWING INTERMEDIATES -----------\n");
   for(int i = 0; i < intermediateList.getIntermediateCount(); i++){
     intermediateList.getIntermediate(i)->print();
   }
@@ -159,7 +161,7 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       for(uint64_t t = 0; t < column->size(); t++)
           if(predicate->relation1->getTuple(predicate->col1, (*column)[t]) ==
           predicate->relation2->getTuple(predicate->col2, (*column)[t])){
-            LOG("\tmatching row %lu\n", (*column)[t]);
+            //LOG("\tmatching row %lu\n", (*column)[t]);
             new_column.push_back((*column)[t]);
           }
       intermediate->update(predicate->relId1, &new_column);
@@ -170,7 +172,7 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       for(uint64_t t = 0; t < predicate->relation1->getTupleCount(); t++)
           if(predicate->relation1->getTuple(predicate->col1, t) ==
           predicate->relation2->getTuple(predicate->col2, t)){
-            LOG("\tmatching row %lu\n", t);
+            //LOG("\tmatching row %lu\n", t);
             new_column.push_back(t);
           }
       intermediate->updateColumn(predicate->relId1, &new_column);
@@ -190,15 +192,22 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
 
     result* res = radixHashJoin(rel1, rel2);
 
-    LOG("\tmatching %u rows\n", res->num_blocks);
+    LOG("\tmatching %lu rows\n", res->num_tuples);
 
-    if(!intermediate1)
+    if (!intermediate1 && !intermediate2){
+      LOG("\tno existing intermediate\n");
       intermediate1 = results.createIntermediate();
-    intermediate1->update(predicate->relId1, res);
-
-    if(!intermediate2)
-      intermediate2 = results.createIntermediate();
-    if(intermediate1 != intermediate2)
-      intermediate2->update(predicate->relId2, res);
+      intermediate1->update(predicate->relId1, predicate->relId2, res);
+    } else if (intermediate1 && !intermediate2) {
+      LOG("\tfound intermediate1, updating 1\n");
+      intermediate1->update(predicate->relId1, predicate->relId2, res);
+    } else if (!intermediate1 && intermediate2) {
+      LOG("\tfound intermediate2, updating 2\n");
+      intermediate2->update(predicate->relId1, predicate->relId2, res);
+    } else{
+      LOG("\tfound both intermediate1 and intermediate2, updating both\n");
+      intermediate1->update(predicate->relId1, predicate->relId2, res);
+      intermediate2->update(predicate->relId1, predicate->relId2, res);
+    }
   }
 }
