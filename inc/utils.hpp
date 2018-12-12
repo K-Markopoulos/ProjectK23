@@ -23,14 +23,3 @@ using namespace std;
 vector<string> split(const string line, const char delim);
 // checks if file exists
 bool file_exists(const string& name);
-// if predicate match filter format
-bool isFilter(string pred);
-
-// validates that sections are as expected
-bool validateSections(const vector<string>& sections);
-// validates that relation is as expected
-bool validateRelation(const string& relation);
-// validates that predicate is as expected
-bool validatePredicate(const string& predicate);
-// validates that selector is as expected
-bool validateSelector(const string& selector);

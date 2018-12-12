@@ -15,11 +15,23 @@ class Query{
   std::vector<Predicate> predicates;
   std::vector<Filter> filters;
   std::vector<Selector> selectors;
+  // if predicate match filter format
+  bool isFilter(std::string pred);
+  // validates that sections are as expected
+  bool validateSections(const std::vector<std::string>& sections);
+  // validates that relation is as expected
+  bool validateRelation(const std::string& relation);
+  // validates that predicate is as expected
+  bool validatePredicate(const std::string& predicate);
+  // validates that selector is as expected
+  bool validateSelector(const std::string& selector);
   public:
     // parse query in [FROM]|[WHERE]|[SELECT]
     bool parseQuery(const std::string line);
     //get Relation
     Relation* getRelation(const int i) const;
+    // get Relations Count
+    uint64_t getRelationsCount() const;
     // get Predicate
     const Predicate* getPredicate(const int i) const;
     // get Filter

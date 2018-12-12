@@ -13,7 +13,7 @@ OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 TEST_OBJ = $(TEST_SRC:$(TEST_SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 F_OBJ = $(filter-out obj/main.o,$(OBJ))
 
-CCFLAGS = -std=c++11
+CCFLAGS = -std=c++11 -g3
 
 .PHONY: clean
 .PHONY: directories
@@ -53,7 +53,7 @@ test_utils: ./obj/utils.o ./obj/testUtils.o
 test_parsing: $(F_OBJ) ./obj/testParsing.o
 	$(CC) -o $@ $^ $(CCFLAGS)
 	#
-	# OK! now try ./test_parsing < workloads/small/small.work
+	# OK! now try echo -e '\n' | cat ./workloads/small/small.init - ./workloads/small/small.work | ./test_parsing
 	#
 
 test_relation: $(F_OBJ) ./obj/testRelation.o

@@ -8,22 +8,120 @@
 
 
 /** -----------------------------------------------------
+ * split a string based on the delimeter
+ *
+ * @params line, string to split
+ * @params delim, character used as delimeter
+ */
+bool Query::isFilter(string pred){
+  MUST(pred.find('.') == pred.rfind('.')) // only one dot
+  return true;
+}
+/** -----------------------------------------------------
+ * validates that sections are as expected
+ *
+ * @params sections, Query's sections to validate
+ * @returns true if valid, else false
+ */
+bool Query::validateSections(const vector<string>& sections){
+  MUST(sections.size() == 3)
+  MUST(!sections[0].empty())
+  MUST(!sections[1].empty())
+  MUST(!sections[2].empty())
+  return true;
+}
+
+/** -----------------------------------------------------
+* validates that relation is as expected
+*
+* @params relation, Query's relation to validate
+* @returns true if valid, else false
+*/
+bool Query::validateRelation(const string& relation){
+  MUST(!relation.empty()) // not empty
+  MUST(relation.find_first_not_of("0123456789") == string::npos) // only digits
+  MUST(stoi(relation) < db->getRelationsCount()) // relation's index < total relations
+  return true;
+}
+
+/** -----------------------------------------------------
+* validates that predicate is as expected
+*
+* @params predicate, Query's predicate to validate
+* @returns true if valid, else false
+*/
+bool Query::validatePredicate(const string& predicate){
+  MUST(!predicate.empty()) // not empty
+  size_t pos_operator, pos_dot;
+  MUST((pos_operator=predicate.find_first_of("<>=")) != string::npos) // got an operator
+  MUST((pos_operator=predicate.find_first_of("<>=")) == predicate.find_last_of("<>=")) // only one operator
+  string part1 = predicate.substr(0, pos_operator);
+  string part2 = predicate.substr(pos_operator+1);
+  MUST(part1.find_first_not_of(".0123456789") == string::npos) // only digits and dot
+  MUST(part2.find_first_not_of(".0123456789") == string::npos) // only digits and dot
+  int relCount = relations.size();
+  bool at_least_one_column = false;
+  if((pos_dot=part1.find('.')) != string::npos){
+    MUST(pos_dot == part1.rfind('.')) // only one dot
+    MUST(pos_dot != 0 && pos_dot != part1.size()-1) // dot not first or last
+    int rel = stoi(part1.substr(0,pos_dot));
+    int colCount = relations[rel]->getColumnCount();
+    MUST(rel < relCount) // relation's index < total relations
+    MUST(stoi(part1.substr(pos_dot+1)) < colCount) // relation's column < total relation's columns
+    at_least_one_column = true;
+  }
+  if((pos_dot=part2.find('.')) != string::npos){
+    MUST(pos_dot == part2.rfind('.')) // only one dot
+    MUST(pos_dot != 0 && pos_dot != part2.size()-1) // dot not first or last
+    int rel = stoi(part2.substr(0,pos_dot));
+    int colCount = relations[rel]->getColumnCount();
+    MUST(rel < relCount) // relation's index < total relations
+    MUST(stoi(part2.substr(pos_dot+1)) < colCount) // relation's column < total relation's columns
+    at_least_one_column = true;
+  }
+  MUST(at_least_one_column)
+
+  return true;
+}
+
+/** -----------------------------------------------------
+* validates that selector is as expected
+*
+* @params predicate, Query's predicate to validate
+* @returns true if valid, else false
+*/
+bool Query::validateSelector(const string& selector){
+  size_t pos_dot;
+  MUST(!selector.empty()) // not empty
+  MUST(selector.find_first_not_of(".0123456789") == string::npos) // only digits and dot
+  MUST((pos_dot=selector.find('.')) != string::npos) // got a dot
+  MUST(pos_dot == selector.rfind('.')) // only one dot
+  MUST(pos_dot != 0 && pos_dot != selector.size()-1) // dot not first or last
+  int relCount = relations.size();
+  int rel = stoi(selector.substr(0,pos_dot));
+  int colCount = relations[rel]->getColumnCount();
+  MUST(rel < relCount) // relation's index < total relations
+  MUST(stoi(selector.substr(pos_dot+1)) < colCount) // relation's column < total relation's columns
+  return true;
+}
+
+/** -----------------------------------------------------
  * parse a query, populate relations, predicates, filters and selectors of query
  *
  * @params line, [FROM]|[WHERE]|[SELECT]
  */
 bool Query::parseQuery(const string line){
+  LOG("parsing query >%s\n", line.c_str());
 
-  //split by '|'
   vector<string> sections = split(line, '|');
-
   MUST(validateSections(sections))
   LOG("sections OK!\n");
+
   //add relations
   for(string rel : split(sections[0], ' ')){
     MUST(validateRelation(rel))
     LOG("Relation '%s' OK!\n", rel.c_str());
-    relations.emplace_back(db->getRelation(stoi(rel)));
+    relations.push_back(db->getRelation(stoi(rel)));
   }
 
   //add predicates and filters
@@ -42,7 +140,7 @@ bool Query::parseQuery(const string line){
   for(string sel : split(sections[2], ' ')){
     MUST(validateSelector(sel))
     LOG("Selector '%s' OK!\n", sel.c_str());
-    //selectors.emplace_back( Selector(sel) );
+    selectors.emplace_back(Selector(sel));
   }
 
   return true;
@@ -58,6 +156,16 @@ Relation* Query::getRelation(const int index) const{
     return relations[index];
   return NULL;
 }
+
+/** -----------------------------------------------------
+* Get relations count
+*
+* @returns count
+*/
+uint64_t Query::getRelationsCount() const{
+  return relations.size();
+}
+
 /** -----------------------------------------------------
 * getter for Predicate
 *
@@ -68,6 +176,7 @@ const Predicate* Query::getPredicate(const int index) const{
     return &predicates[index];
   return NULL;
 }
+
 /** -----------------------------------------------------
 * getter for Filter
 *
@@ -78,6 +187,7 @@ const Filter* Query::getFilter(const int index) const{
     return &filters[index];
   return NULL;
 }
+
 /** -----------------------------------------------------
 * getter for Selector
 *
@@ -88,6 +198,7 @@ const Selector* Query::getSelector(const int index) const{
     return &selectors[index];
   return NULL;
 }
+
 /** -----------------------------------------------------
  * Clears query data
  *

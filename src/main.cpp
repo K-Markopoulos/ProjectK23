@@ -17,7 +17,6 @@ int main(int argc, char* argv[]) {
   LOG("\nREADING QUERIES\n\n\n");
   Query query;
   while (getline(cin, line)) {
-    LOG("got query %s\n", line.c_str());
     if (line == "F" || line.empty()) {
       cout << endl;
       continue;
