@@ -129,7 +129,6 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
       if(op(filter->op, value, filter->value)){
         new_column.push_back((*column)[t]);
       }
-      // else { LOG("\t\trowId:%lu, value:%ld NOOOOOOOOOOT\n", (*column)[t], value);}
     }
     // update intermediate
     intermediate->update(filter->relId, &new_column);
@@ -144,7 +143,6 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
         // push to new intermediate
         new_column.push_back(t);
       }
-      // else { LOG("\t\trowId:%d, value:%ld N000000000000T\n", t, value);}
     }
     intermediate->updateColumn(filter->relId, &new_column);
   }
@@ -200,8 +198,6 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       predicate->relation2->buildRelation(predicate->col2);
 
     result* res = radixHashJoin(rel1, rel2);
-
-    LOG("\tmatching %lu rows\n", res->num_tuples);
 
     if (!intermediate1 && !intermediate2){
       LOG("\tno existing intermediate\n");

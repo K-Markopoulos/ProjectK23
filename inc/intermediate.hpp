@@ -7,6 +7,7 @@
 
 
 class Intermediate{
+  int _id;
   std::vector<uint64_t> relationsIds;
   std::vector<bool> loaded;
   std::vector<std::vector<uint64_t>> rowIds;

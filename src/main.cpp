@@ -22,7 +22,6 @@ int main(int argc, char* argv[]) {
   Query query;
   while (getline(cin, line)) {
     if (line == "F" || line.empty()) {
-      cout << endl;
       continue;
     }
     if(!query.parseQuery(line)){

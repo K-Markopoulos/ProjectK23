@@ -73,12 +73,14 @@ Intermediate* IntermediateList::createIntermediate(){
 Intermediate::Intermediate(const Query& query){
   Relation* rel;
   int i = 0;
+  static int id = 0;
+  _id = id++;
   while(rel = query.getRelation(i++)){
     relationsIds.push_back(rel->getId());
   }
   loaded.assign(i-1, false);
   rowIds.resize(i-1);
-  LOG("\t\t+Creating new intermediate size:%lu\n", rowIds.size());
+  LOG("\t\t+Creating new intermediate %d\n", _id);
 }
 
 /** -----------------------------------------------------
@@ -99,7 +101,8 @@ std::vector<uint64_t>* Intermediate::getColumn(int id){
  * @params new_column, vector of uint64_t
  */
 void Intermediate::update(int col, std::vector<uint64_t>* new_column){
-  LOG("\t\t^Updating intermediate based on column %d\n", col);
+  LOG("\t\t^Updating intermediate %d based on column %d\n", _id, col);
+  LOG("\t\tmatching %lu rows\n", new_column->size());
   assert(col < rowIds.size());
   assert(loaded[col]);
 
@@ -107,6 +110,7 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
     LOG("\t\t!No matches for intermediate\n");
     for(uint64_t c = 0; c < relationsIds.size(); c++)
       if(loaded[c]) rowIds[c].clear();
+    loaded[col] = true;
     return;
   }
 
@@ -120,6 +124,9 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
       }
     }
   }
+
+  LOG("\t\t^Updated\n");
+  // print();
 }
 
 /** ----------------------------------------------------- TODOOOOOOOOOO
@@ -129,7 +136,8 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
  * @params results, struct result (returned fron RadixHashJoin)
  */
 void Intermediate::update(int col1, int col2, result* results){
-  LOG("\t\t^Updating intermediate based on columns %d,%d and struct result\n", col1, col2);
+  LOG("\t\t^Updating intermediate %d based on columns %d,%d and struct result\n", _id, col1, col2);
+  LOG("\tmatching %lu rows\n", results->num_tuples);
   assert(col1 < rowIds.size());
   assert(col2 < rowIds.size());
   // print();
@@ -137,6 +145,8 @@ void Intermediate::update(int col1, int col2, result* results){
     LOG("\t\t!No matches for intermediate\n");
     for(uint64_t c = 0; c < relationsIds.size(); c++)
       if(loaded[c]) rowIds[c].clear();
+    loaded[col1] = true;
+    loaded[col2] = true;
     return;
   }
 
@@ -182,11 +192,14 @@ void Intermediate::update(int col1, int col2, result* results){
  * @params new_column, vector of uint64_t
  */
 void Intermediate::updateColumn(int col, std::vector<uint64_t>* new_column){
-  LOG("\t\t^Updating intermediate column %d\n", col);
+  LOG("\t\t^Updating intermediate %d column %d\n", _id, col);
+  LOG("\t\tmatching %lu rows\n", new_column->size());
   assert(col < rowIds.size());
   loaded[col] = true;
   if(new_column->size())
     rowIds[col] = *new_column;
+  LOG("\t\t^Updated\n");
+  // print();
 }
 
 /** -----------------------------------------------------
@@ -226,7 +239,7 @@ relation* Intermediate::buildRelation(Relation* rel, int id, int col){
  *
  */
 void Intermediate::print(){
-  printf("\n**** Intermediate Print *****\n");
+  printf("\n**** Intermediate (%d) Print *****\n", _id);
   for(uint64_t id : relationsIds)
     printf("%lu-", id);
   printf("\n");

@@ -11,7 +11,7 @@
     }                         \
   }
 
-// #define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define LOG(...) fprintf(stdout,"[DEBUG]: "); fprintf( stdout, __VA_ARGS__ );
 #else
