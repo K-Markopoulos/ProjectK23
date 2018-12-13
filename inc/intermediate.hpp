@@ -30,7 +30,7 @@ class Intermediate{
 };
 
 class IntermediateList{
-  std::vector<Intermediate> list;
+  std::vector<Intermediate*> list;
   std::vector<Intermediate>::iterator active;
   const Query& query;
   public:
@@ -43,4 +43,5 @@ class IntermediateList{
     uint64_t getIntermediateCount();
     // create new intermediate
     Intermediate* createIntermediate();
+    ~IntermediateList();
 };

@@ -307,3 +307,13 @@ void freeHashTableAndComponents(hash_table * ht){
   free(ht->rel);
   free(ht);
 }
+
+/**
+ *  Free the struct relation
+ *
+ * @params ht, the hash table
+ */
+void destroyRelation(relation* rel){
+  free(rel->tuples);
+  free(rel);
+}

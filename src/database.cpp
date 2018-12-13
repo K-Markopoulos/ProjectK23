@@ -12,6 +12,14 @@
 using namespace std;
 
 /** -----------------------------------------------------
+ * Destructor
+ *
+ */
+Database::~Database(){
+  for(Relation* rel : relations)
+    delete rel;
+}
+/** -----------------------------------------------------
  * Adds a new relation in DB, specifying path
  *
  * @params fileName, fileName where relation is stored
@@ -22,7 +30,7 @@ void Database::addRelation(const string fileName){
     return;
   }
 
-  this->relations.emplace_back(Relation(fileName));
+  this->relations.push_back(new Relation(fileName));
   return;
 }
 
@@ -34,7 +42,7 @@ void Database::addRelation(const string fileName){
  */
 Relation* Database::getRelation(int id){
   if(id < this->getRelationsCount())
-    return &this->relations[id];
+    return this->relations[id];
   LOG("ERROR: Database::getRelation out of border\n");
   return NULL;
 }
@@ -64,6 +72,7 @@ string Database::run(const Query& query){
   int fCount = 0;
   while(filter = query.getFilter(fCount++)){
     runFilter(filter, intermediateList);
+    delete filter;
   }
 
   //  run predicates
@@ -71,6 +80,7 @@ string Database::run(const Query& query){
   int pCount = 0;
   while(predicate = query.getPredicate(pCount++)){
     runPredicate(predicate, intermediateList);
+    delete predicate;
   }
 
   string response;
@@ -80,6 +90,7 @@ string Database::run(const Query& query){
   while(selector = query.getSelector(sCount++)){
     string temp_response = runSelector(selector, intermediateList);
     response += (temp_response.empty()? string("NULL"):temp_response) + ' ';
+    delete selector;
   }
 
   return response;
@@ -199,21 +210,23 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
 
     result* res = radixHashJoin(rel1, rel2);
 
+    destroyRelation(rel1);
+    destroyRelation(rel2);
+
     if (!intermediate1 && !intermediate2){
-      LOG("\tno existing intermediate\n");
+      LOG("\t\tno existing intermediate\n");
       intermediate1 = results.createIntermediate();
       intermediate1->update(predicate->relId1, predicate->relId2, res);
     } else if (intermediate1 && !intermediate2) {
-      LOG("\tfound intermediate1, updating 1\n");
       intermediate1->update(predicate->relId1, predicate->relId2, res);
     } else if (!intermediate1 && intermediate2) {
-      LOG("\tfound intermediate2, updating 2\n");
       intermediate2->update(predicate->relId1, predicate->relId2, res);
     } else{
-      LOG("\tfound both intermediate1 and intermediate2, updating both (should I?)\n");
+      LOG("\t\tfound both intermediate1 and intermediate2, updating both (should I?)\n");
       intermediate1->update(predicate->relId1, predicate->relId2, res);
       intermediate2->update(predicate->relId1, predicate->relId2, res);
     }
+    destroyResult(res);
   }
 }
 

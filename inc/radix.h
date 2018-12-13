@@ -61,3 +61,4 @@ relation * createRelation(relation * rel, array_int psum_original);
 array_int createPsum(array_int hist);
 array_int createHistogram(relation * rel);
 void freeHashTableAndComponents(hash_table *);
+void destroyRelation(relation* rel);

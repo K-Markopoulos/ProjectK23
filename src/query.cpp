@@ -134,10 +134,10 @@ bool Query::parseQuery(const string line){
     MUST(validatePredicate(pred))
     LOG("Predicate '%s' OK!\n", pred.c_str());
     if(isFilter(pred)){
-      filters.emplace_back(Filter(pred, this));
+      filters.push_back(new Filter(pred, this));
     }
     else{
-      predicates.emplace_back(Predicate(pred, this));
+      predicates.push_back(new Predicate(pred, this));
     }
   }
 
@@ -145,7 +145,7 @@ bool Query::parseQuery(const string line){
   for(string sel : split(sections[2], ' ')){
     MUST(validateSelector(sel))
     LOG("Selector '%s' OK!\n", sel.c_str());
-    selectors.emplace_back(Selector(sel, this));
+    selectors.push_back(new Selector(sel, this));
   }
 
   return true;
@@ -178,7 +178,7 @@ uint64_t Query::getRelationsCount() const{
 */
 const Predicate* Query::getPredicate(const int index) const{
   if(index < predicates.size())
-    return &predicates[index];
+    return predicates[index];
   return NULL;
 }
 
@@ -189,7 +189,7 @@ const Predicate* Query::getPredicate(const int index) const{
 */
 const Filter* Query::getFilter(const int index) const{
   if(index < filters.size())
-    return &filters[index];
+    return filters[index];
   return NULL;
 }
 
@@ -200,7 +200,7 @@ const Filter* Query::getFilter(const int index) const{
 */
 const Selector* Query::getSelector(const int index) const{
   if(index < selectors.size())
-    return &selectors[index];
+    return selectors[index];
   return NULL;
 }
 
@@ -210,8 +210,14 @@ const Selector* Query::getSelector(const int index) const{
  */
 void Query::clear(){
   this->relations.clear();
+  for(Predicate* pred: predicates)
+    delete pred;
   this->predicates.clear();
+  for(Filter* filter: filters)
+    delete filter;
   this->filters.clear();
+  for(Selector* sel: selectors)
+    delete sel;
   this->selectors.clear();
   return;
 }

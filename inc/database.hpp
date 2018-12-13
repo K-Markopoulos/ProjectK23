@@ -11,7 +11,7 @@ class Database;
 extern Database* db;
 
 class Database{
-  std::vector<Relation> relations;
+  std::vector<Relation*> relations;
 
   public:
     // add relation
@@ -28,4 +28,5 @@ class Database{
     void runPredicate(const Predicate* predicate, IntermediateList& results);
     // run a selector
     std::string runSelector(const Selector* selector, IntermediateList& results);
+    ~Database();
 };

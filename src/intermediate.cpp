@@ -20,6 +20,15 @@ using namespace std;
 IntermediateList::IntermediateList(const Query& query_): query(query_){}
 
 /** -----------------------------------------------------
+ * IntermediateList destructor
+ *
+ */
+IntermediateList::~IntermediateList(){
+  for(Intermediate* intermediate: list)
+    free(intermediate);
+}
+
+/** -----------------------------------------------------
  * Get Intermediate by id
  *
  * @params id
@@ -27,7 +36,7 @@ IntermediateList::IntermediateList(const Query& query_): query(query_){}
  */
 Intermediate* IntermediateList::getIntermediate(int id){
   assert(id < getIntermediateCount());
-  return &list[id];
+  return list[id];
 }
 
 /** -----------------------------------------------------
@@ -38,9 +47,9 @@ Intermediate* IntermediateList::getIntermediate(int id){
  */
 Intermediate* IntermediateList::getIntermediateByRel(int relId){
   uint64_t id = 0;
-  for(Intermediate& intermediate : list){
-    if(intermediate.isLoaded(relId)){
-      return &intermediate;
+  for(Intermediate* intermediate : list){
+    if(intermediate->isLoaded(relId)){
+      return intermediate;
     }
     id++;
   }
@@ -62,8 +71,8 @@ uint64_t IntermediateList::getIntermediateCount(){
  * @returns intermediate, the new one
  */
 Intermediate* IntermediateList::createIntermediate(){
-  list.emplace_back(Intermediate(query));
-  return &list[list.size()-1];
+  list.push_back(new Intermediate(query));
+  return list[list.size()-1];
 }
 
 /** -----------------------------------------------------
@@ -126,7 +135,7 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
   }
 
   LOG("\t\t^Updated\n");
-  // print();
+  print();
 }
 
 /** ----------------------------------------------------- TODOOOOOOOOOO
@@ -137,10 +146,10 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
  */
 void Intermediate::update(int col1, int col2, result* results){
   LOG("\t\t^Updating intermediate %d based on columns %d,%d and struct result\n", _id, col1, col2);
-  LOG("\tmatching %lu rows\n", results->num_tuples);
+  LOG("\t\tmatching %lu rows\n", results->num_tuples);
   assert(col1 < rowIds.size());
   assert(col2 < rowIds.size());
-  // print();
+
   if(!results->num_tuples){
     LOG("\t\t!No matches for intermediate\n");
     for(uint64_t c = 0; c < relationsIds.size(); c++)
@@ -182,7 +191,7 @@ void Intermediate::update(int col1, int col2, result* results){
   loaded[col1] = true;
   loaded[col2] = true;
   LOG("\t\t^Updated\n");
-  // print();
+  print();
 }
 
 /** -----------------------------------------------------
@@ -199,7 +208,7 @@ void Intermediate::updateColumn(int col, std::vector<uint64_t>* new_column){
   if(new_column->size())
     rowIds[col] = *new_column;
   LOG("\t\t^Updated\n");
-  // print();
+  print();
 }
 
 /** -----------------------------------------------------
@@ -220,7 +229,7 @@ bool Intermediate::isLoaded(int id){
  * @returns relation*, (allocated) to be used in radixHashJoin
  */
 relation* Intermediate::buildRelation(Relation* rel, int id, int col){
-  LOG("\t\tbuilding relation %d(%lu) fromn intermediate\n", id, rel->getId());
+  LOG("\t\tbuilding relation %d(%lu) from intermediate %d\n", id, rel->getId(), _id);
   assert(id < rowIds.size());
   assert(isLoaded(id));
 
@@ -231,6 +240,7 @@ relation* Intermediate::buildRelation(Relation* rel, int id, int col){
     res->tuples[i].key = rowIds[id][i];
     res->tuples[i].payload = rel->getTuple(col, rowIds[id][i]);
   }
+  LOG("\t\tbuilt relation with size: %lu\n", res->num_tuples);
   return res;
 }
 
@@ -239,13 +249,14 @@ relation* Intermediate::buildRelation(Relation* rel, int id, int col){
  *
  */
 void Intermediate::print(){
-  printf("\n**** Intermediate (%d) Print *****\n", _id);
+  #ifdef PRINT_IR
+  printf("\n\t**** Intermediate (%d) Print *****\n\t", _id);
   for(uint64_t id : relationsIds)
     printf("%lu-", id);
-  printf("\n");
+  printf("\n\t");
   for(bool load : loaded)
     printf("%c-", load ? 'Y':'N');
-  printf("\n_____________________________\n");
+  printf("\n\t_____________________________\n\t");
 
   int64_t col = -1;
   for(uint64_t i = 0; i < loaded.size(); i++){
@@ -256,11 +267,12 @@ void Intermediate::print(){
   }
 
   if(col == -1){
-    printf("-- empty --\n");
+    printf("-- empty --\n\t");
     printf("**** /Intermediate Print *****\n\n");
     return;
   }
 
+  #ifndef SKIP_DATA
   for(uint64_t r = 0; r < rowIds[col].size(); r++){
     for(uint64_t c = 0; c < rowIds.size(); c++){
       if(loaded[c])
@@ -268,7 +280,9 @@ void Intermediate::print(){
       else
         printf("-|");
     }
-    printf("\n");
+    printf("\n\t");
   }
+  #endif
   printf("**** /Intermediate Print *****\n\n");
+  #endif
 }

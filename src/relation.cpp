@@ -30,13 +30,13 @@ Relation::Relation(std::string fileName): sourceFileName(fileName){
  *
  */
 Relation::~Relation(){
-  // ISSUE: Copies of Relation remove the memory
-  // make sure no copies are made before uncommenting the following code
+  LOG("Destructing relation %d\n", _id);
+  // WARNING: Copies of Relation remove the memory
 
-  // if(this->loaded && munmap(this->memblock, this->memsize) < 0){
-  //   perror("Failed to detach mapped memory");
-  //   exit(2);
-  // }
+  if(this->loaded && munmap(this->memblock, this->memsize) < 0){
+    perror("Failed to detach mapped memory");
+    exit(2);
+  }
 }
 
 /** -----------------------------------------------------

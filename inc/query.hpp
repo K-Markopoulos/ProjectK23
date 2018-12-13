@@ -12,9 +12,9 @@ class Selector;
 
 class Query{
   std::vector<Relation*> relations;
-  std::vector<Predicate> predicates;
-  std::vector<Filter> filters;
-  std::vector<Selector> selectors;
+  std::vector<Predicate*> predicates;
+  std::vector<Filter*> filters;
+  std::vector<Selector*> selectors;
   // if predicate match filter format
   bool isFilter(std::string pred);
   // validates that sections are as expected

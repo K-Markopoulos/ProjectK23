@@ -32,5 +32,7 @@ int main(int argc, char* argv[]) {
     query.clear();
   }
   cout << endl;
+
+  delete db;
   return 0;
 }
