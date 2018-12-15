@@ -25,7 +25,7 @@ IntermediateList::IntermediateList(const Query& query_): query(query_){}
  */
 IntermediateList::~IntermediateList(){
   for(Intermediate* intermediate: list)
-    free(intermediate);
+    delete intermediate;
 }
 
 /** -----------------------------------------------------
@@ -167,7 +167,6 @@ void Intermediate::update(int col1, int col2, result* results){
       rowIds[col2].push_back(tuple->payload);
     }
   } else {
-    int col = loaded[col1] ? col1 : col2;
     vector<vector<uint64_t>> new_rowIds;
     new_rowIds.resize(rowIds.size());
     for(vector<uint64_t> v : new_rowIds)
@@ -175,15 +174,11 @@ void Intermediate::update(int col1, int col2, result* results){
     uint64_t r = 0;
     for(uint64_t t = 0; t < results->num_tuples; t++){
       tuple_* tuple = getNthResult(results, t);
-      r = -1;
-      while(rowIds[col][++r] != (col==col1?tuple->key:tuple->payload));
+      new_rowIds[col2].push_back(tuple->payload);
       for(uint64_t c = 0; c < rowIds.size(); c++){
-        if(loaded[c])
-          new_rowIds[c].push_back(rowIds[c][r]);
-        else if(c==col1)
-          new_rowIds[c].push_back(tuple->key);
-        else if(c==col2)
-          new_rowIds[c].push_back(tuple->payload);
+        if(loaded[c] && c!=col2){
+          new_rowIds[c].push_back(rowIds[c][tuple->key]);
+        }
       }
     }
     rowIds = new_rowIds;
@@ -236,8 +231,8 @@ relation* Intermediate::buildRelation(Relation* rel, int id, int col){
   relation* res = (relation*) malloc(sizeof(relation));
   res->tuples = (tuple_*) malloc(rowIds[id].size()*sizeof(tuple_));
   res->num_tuples = rowIds[id].size();
-  for(int i = 0; i < rowIds[id].size(); i++){
-    res->tuples[i].key = rowIds[id][i];
+  for(uint64_t i = 0; i < rowIds[id].size(); i++){
+    res->tuples[i].key = i;
     res->tuples[i].payload = rel->getTuple(col, rowIds[id][i]);
   }
   LOG("\t\tbuilt relation with size: %lu\n", res->num_tuples);

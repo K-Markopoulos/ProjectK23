@@ -7,13 +7,13 @@ typedef struct block block;
 struct result {
   block * head;
   block * last;
-  uint32_t num_blocks;
+  uint64_t num_blocks;
   uint64_t num_tuples;
 };
 
 struct block {
   tuple_ * tuples;
-  uint32_t num_tuples;
+  uint64_t num_tuples;
   block * next;
 };
 

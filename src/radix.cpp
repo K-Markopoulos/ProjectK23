@@ -21,7 +21,7 @@ void printRelation(relation * rel, char const * name){
   std::cout << "* Printing Relation " << name << std::endl;
   std::cout << "* key  | payload" << std::endl;
   std::cout << "* -----+--------" << std::endl;
-  for(int i = 0; i < rel->num_tuples; i++)
+  for(uint64_t i = 0; i < rel->num_tuples; i++)
     printf("* %5ld|%5ld\n", rel->tuples[i].key, rel->tuples[i].payload);
   std::cout << "* /Printing Relation " << name << std::endl << std::endl;
 }
@@ -32,7 +32,7 @@ void printRelation(relation * rel, char const * name){
  * @params num, hash this number
  * @returns hash value
  */
-inline int64_t h2(int64_t num) {
+inline uint64_t h2(int64_t num) {
   return num % PRIME_NUM; //Later we are going to find the next prime from length
 }
 
@@ -47,7 +47,7 @@ array_int createHistogram(relation * rel){
   hist.length = (1 << H1_LAST_BITS);
   hist.data = (int64_t*) calloc(sizeof(int64_t), hist.length);
 
-  for(int64_t i = 0; i < rel->num_tuples; i++){
+  for(uint64_t i = 0; i < rel->num_tuples; i++){
     hist.data[h1(rel->tuples[i].payload)]++;
   }
   return hist;
@@ -140,10 +140,10 @@ hash_table * reorderRelation(relation * rel){
  * @params ht, the hash table
  * @params index_start, the bucket we are currently
  */
-int64_t set_high(hash_table* ht, int64_t index_start){
+int64_t set_high(hash_table* ht, uint64_t index_start){
   if(index_start == ht->psum.length)
     return ht->rel->num_tuples;
-  for(int64_t i = index_start; i<ht->psum.length; i++){
+  for(uint64_t i = index_start; i<ht->psum.length; i++){
     if(ht->psum.data[i]!=-1)
       return ht->psum.data[i];
   }
@@ -192,7 +192,7 @@ void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *re
  * @returns true or false
  */
 bool isPrime(uint64_t n) {
-    for(int i=2; i*i<=n; i++) {
+    for(uint64_t i=2; i*i<=n; i++) {
       if(n % i == 0) {
         return false;
       }
@@ -206,14 +206,14 @@ bool isPrime(uint64_t n) {
  * @params res, the result struct
  * @returns next prime number
  */
-inline int findNextPrime(uint64_t n) {
+inline uint64_t findNextPrime(uint64_t n) {
   while(!isPrime(++n));
   return n;
 }
 
 b_chain * indexingSmallBucket(bucket_hash *small) {
   b_chain * bc=new b_chain();
-  int bucket_size=small->b->high-small->b->low;
+  uint64_t bucket_size=small->b->high-small->b->low;
 
   bc->Chain=new int64_t[bucket_size];
   PRIME_NUM=findNextPrime(bucket_size);

@@ -209,16 +209,21 @@ const Selector* Query::getSelector(const int index) const{
  *
  */
 void Query::clear(){
+  LOG("Starting clear\n");
   this->relations.clear();
-  for(Predicate* pred: predicates)
-    delete pred;
+  LOG("Cleared vector relations\n");
+  // for(Predicate* pred: predicates)
+  //   delete pred;
+  LOG("Cleared predicates\n");
   this->predicates.clear();
-  for(Filter* filter: filters)
-    delete filter;
+  LOG("Cleared vector predicates\n");
+  // for(Filter* filter: filters)
+  //   delete filter;
   this->filters.clear();
-  for(Selector* sel: selectors)
-    delete sel;
+  // for(Selector* sel: selectors)
+  //   delete sel;
   this->selectors.clear();
+  LOG("Ending clear\n");
   return;
 }
 

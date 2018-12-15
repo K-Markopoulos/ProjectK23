@@ -240,6 +240,7 @@ string Database::runSelector(const Selector* selector, IntermediateList& results
     vector<uint64_t>* column = intermediate->getColumn(selector->relId);
     if(column->size() == 0)
       return "";
+    LOG("\tgetting sum from %lu rows\n",column->size());
     for(int t = 0; t < column->size(); t++)
       sum += selector->relation->getTuple(selector->col, (*column)[t]);
   } else {

@@ -24,7 +24,7 @@ struct relation {
 
 struct array_int{
   int64_t * data;
-  int64_t length;
+  uint64_t length;
 };
 
 struct hash_table{
@@ -33,8 +33,8 @@ struct hash_table{
 };
 
 struct bucket{
-  int64_t low;
-  int64_t high;
+  uint64_t low;
+  uint64_t high;
 };
 
 struct b_chain {
@@ -54,8 +54,8 @@ result * radixHashJoin(relation * rel_R, relation * rel_S);
 void compareBuckets(bucket_hash *sm,bucket_hash *lg,b_chain *bc,result *res_list,bool isReversed);
 b_chain * indexingSmallBucket(bucket_hash *small);
 bool isPrime(uint64_t n);
-inline int findNextPrime(uint64_t n);
-inline int64_t h2(int64_t num);
+inline uint64_t findNextPrime(uint64_t n);
+inline uint64_t h2(int64_t num);
 hash_table * reorderRelation(relation * rel);
 relation * createRelation(relation * rel, array_int psum_original);
 array_int createPsum(array_int hist);
