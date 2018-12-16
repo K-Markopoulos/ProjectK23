@@ -174,9 +174,10 @@ void Intermediate::update(int col1, int col2, result* results){
     uint64_t r = 0;
     for(uint64_t t = 0; t < results->num_tuples; t++){
       tuple_* tuple = getNthResult(results, t);
-      new_rowIds[col2].push_back(tuple->payload);
+      new_rowIds[col1].push_back(loaded[col1]? rowIds[col1][tuple->key]: tuple->key);
+      new_rowIds[col2].push_back(loaded[col2]? rowIds[col2][tuple->payload]: tuple->payload);
       for(uint64_t c = 0; c < rowIds.size(); c++){
-        if(loaded[c] && c!=col2){
+        if(loaded[c] && c!=col1 && c!=col2){
           new_rowIds[c].push_back(rowIds[c][tuple->key]);
         }
       }
@@ -185,7 +186,7 @@ void Intermediate::update(int col1, int col2, result* results){
   }
   loaded[col1] = true;
   loaded[col2] = true;
-  LOG("\t\t^Updated %lu rows\n", rowIds.size());
+  LOG("\t\t^Updated %lu rows\n", rowIds[col2].size());
   print();
 }
 
