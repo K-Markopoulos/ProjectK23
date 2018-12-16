@@ -21,6 +21,8 @@ class Intermediate{
     void update(int col1, int col2, result* results);
     // update column in intermediate
     void updateColumn(int col, std::vector<uint64_t>* new_column);
+    // join two column in intermediate
+    void join(int relId1, int col1, Relation* relation1, int relId2, int col2, Relation * relation2);
     // checks if is loaded in intermediate
     bool isLoaded(int id);
     // build relation with [rowId,value] tuples

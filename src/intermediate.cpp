@@ -185,7 +185,7 @@ void Intermediate::update(int col1, int col2, result* results){
   }
   loaded[col1] = true;
   loaded[col2] = true;
-  LOG("\t\t^Updated\n");
+  LOG("\t\t^Updated %lu rows\n", rowIds.size());
   print();
 }
 
@@ -204,6 +204,32 @@ void Intermediate::updateColumn(int col, std::vector<uint64_t>* new_column){
     rowIds[col] = *new_column;
   LOG("\t\t^Updated\n");
   print();
+}
+
+/** -----------------------------------------------------
+ * Join two columns in intermediate
+ *
+ * @params col1
+ * @params col2
+ */
+void Intermediate::join(int relId1, int col1, Relation* relation1, int relId2, int col2, Relation* relation2){
+  LOG("\t\t>< Joining intermediate %d columns %d-%d\n", _id, col1, col2);
+  assert(col1 < rowIds.size());
+  assert(col2 < rowIds.size());
+
+  vector<vector<uint64_t>> new_rowIds;
+  new_rowIds.resize(rowIds.size());
+
+  for(uint64_t r = 0; r < rowIds[relId1].size(); r++){
+    if(relation1->getTuple(col1,rowIds[relId1][r]) == relation2->getTuple(col2,rowIds[relId2][r])){
+      for(uint64_t c = 0; c < rowIds.size(); c++)
+        if(loaded[c])
+          new_rowIds[c].push_back(rowIds[c][r]);
+    }
+  }
+  rowIds = new_rowIds;
+
+LOG("\t\t^Updated %lu rows\n", rowIds[col1].size());
 }
 
 /** -----------------------------------------------------
@@ -268,7 +294,7 @@ void Intermediate::print(){
   }
 
   #ifndef SKIP_DATA
-  for(uint64_t r = 0; r < rowIds[col].size(); r++){
+  for(uint64_t r = 0; r < rowIds[col].size() && r < 5; r++){
     for(uint64_t c = 0; c < rowIds.size(); c++){
       if(loaded[c])
         printf("%lu|", rowIds[c][r]);

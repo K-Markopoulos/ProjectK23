@@ -208,6 +208,13 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       intermediate2->buildRelation(predicate->relation2, predicate->relId2, predicate->col2):
       predicate->relation2->buildRelation(predicate->col2);
 
+    if(intermediate1 && intermediate1 == intermediate2){
+      intermediate1->join(predicate->relId1, predicate->col1, predicate->relation1,
+                          predicate->relId2, predicate->col2, predicate->relation2);
+      destroyRelation(rel1);
+      destroyRelation(rel2);
+      return;
+    }
     result* res = radixHashJoin(rel1, rel2);
 
     destroyRelation(rel1);
@@ -221,10 +228,10 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       intermediate1->update(predicate->relId1, predicate->relId2, res);
     } else if (!intermediate1 && intermediate2) {
       intermediate2->update(predicate->relId1, predicate->relId2, res);
-    } else{
+    } else {
       LOG("\t\tfound both intermediate1 and intermediate2, updating both (should I?)\n");
       intermediate1->update(predicate->relId1, predicate->relId2, res);
-      intermediate2->update(predicate->relId1, predicate->relId2, res);
+      // intermediate2->update(predicate->relId1, predicate->relId2, res);
     }
     destroyResult(res);
   }
