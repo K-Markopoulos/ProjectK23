@@ -9,6 +9,9 @@ struct result {
   block * last;
   uint64_t num_blocks;
   uint64_t num_tuples;
+  tuple_* current_tuple;
+  uint64_t current_tuple_num;
+  block* current_block;
 };
 
 struct block {
@@ -20,7 +23,10 @@ struct block {
 void initResult(result **);
 void destroyResult(result *);
 void addToResult(result *, tuple_ *);
-tuple_ * getNthResult(result *, int32_t);
+tuple_ * getNthResult(result *, uint64_t);
+tuple_ * getResult(result *);
+void initIterator(result *);
+void setIterator(result *, uint64_t);
 void printResults(result *);
 
 void initBlock(block **);

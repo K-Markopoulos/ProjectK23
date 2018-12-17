@@ -161,8 +161,9 @@ void Intermediate::update(int col1, int col2, result* results){
 
   // if none loaded there its a new intermediate
   if (!loaded[col1] && !loaded[col2]){
-    for(uint64_t r = 0; r < results->num_tuples; r++){
-      tuple_* tuple = getNthResult(results, r);
+    tuple_* tuple;
+    initIterator(results);
+    while(tuple=getResult(results)){
       rowIds[col1].push_back(tuple->key);
       rowIds[col2].push_back(tuple->payload);
     }
@@ -172,8 +173,9 @@ void Intermediate::update(int col1, int col2, result* results){
     for(vector<uint64_t> v : new_rowIds)
       v.reserve(results->num_tuples);
     uint64_t r = 0;
-    for(uint64_t t = 0; t < results->num_tuples; t++){
-      tuple_* tuple = getNthResult(results, t);
+    tuple_* tuple;
+    initIterator(results);
+    while(tuple=getResult(results)){
       new_rowIds[col1].push_back(loaded[col1]? rowIds[col1][tuple->key]: tuple->key);
       new_rowIds[col2].push_back(loaded[col2]? rowIds[col2][tuple->payload]: tuple->payload);
       for(uint64_t c = 0; c < rowIds.size(); c++){

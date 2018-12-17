@@ -6,7 +6,6 @@
 
 // 1st hash function
 #define H1_LAST_BITS 8
-//#define PRIME_NUM 101
 #define h1(X) (X & ((1 << H1_LAST_BITS) - 1))
 
 uint64_t PRIME_NUM;
@@ -61,29 +60,11 @@ array_int createHistogram(relation * rel){
  */
 array_int createPsum(array_int hist){
   array_int psum;
-  int previous;
-  bool count=true;
-  int64_t index_mod=1;
-
   psum.length = hist.length;
-  psum.data = (int64_t*) calloc(sizeof(int64_t),psum.length);
-  psum.data[0]=0;
-  for(int64_t i = 0; i < psum.length; i++){
-   if(hist.data[i]!=0) {
-    if(count) {
-      psum.data[i]=0;
-      count=false;
-    }
-    else {
-      psum.data[i]=psum.data[previous] +hist.data[previous];
-    }
-    previous=i;
-  }
-  else {
-    psum.data[i]=-1;
-  }
-}
-
+  psum.data = (int64_t*) malloc(sizeof(int64_t)*psum.length);
+  psum.data[0] = 0;
+  for(uint64_t i=1; i < psum.length; i++)
+    psum.data[i] = psum.data[i-1] + hist.data[i-1];
   return psum;
 }
 
@@ -106,10 +87,12 @@ relation * createRelation(relation * rel, array_int psum_original){
   new_rel->num_tuples = rel->num_tuples;
   new_rel->tuples = (tuple_*) malloc(rel->num_tuples * sizeof(tuple_));
 
+  int64_t index;
   //insert tuples to new_rel
   for(int64_t i = 0; i < rel->num_tuples; i++){
-    new_rel->tuples[psum.data[h1(rel->tuples[i].payload)]] = rel->tuples[i];
-    psum.data[h1(rel->tuples[i].payload)]++;
+    index = h1(rel->tuples[i].payload);
+    new_rel->tuples[psum.data[index]] = rel->tuples[i];
+    psum.data[index]++;
   }
 
   free(psum.data);
@@ -135,52 +118,34 @@ hash_table * reorderRelation(relation * rel){
 }
 
 /**
- * Finds at which element a bucket ends
- *
- * @params ht, the hash table
- * @params index_start, the bucket we are currently
- */
-int64_t set_high(hash_table* ht, uint64_t index_start){
-  if(index_start == ht->psum.length)
-    return ht->rel->num_tuples;
-  for(uint64_t i = index_start; i<ht->psum.length; i++){
-    if(ht->psum.data[i]!=-1)
-      return ht->psum.data[i];
-  }
-  return ht->rel->num_tuples;
-}
-
-/**
  * Indexing in the smallest relation and comparing bucket by bucket
  *
  * @params small, hash table which has the 'small' relation
  * @params large, hash table which has the 'large' relation
  * @params isReversed, for printing the results in the order the 2 relations were given
  */
-
-
 void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *res_list,bool isReversed) {
   int64_t lg_value,h2_res,index;
   tuple_ res_tuple;
 
   int64_t sm_low=small->b->low;
   for(int64_t k=large->b->low; k<large->b->high; k++) {
-    lg_value=large->ht->rel->tuples[k].payload;
-    h2_res=h2(lg_value);
-    index=bc->Bucket[h2_res];
+    lg_value = large->ht->rel->tuples[k].payload;
+    h2_res = h2(lg_value);
+    index = bc->Bucket[h2_res];
     while(index!=-1) {
       if(small->ht->rel->tuples[index+sm_low].payload==lg_value) {
         if(isReversed) {
-          res_tuple.key=large->ht->rel->tuples[k].key;
-          res_tuple.payload=small->ht->rel->tuples[index+sm_low].key;
+          res_tuple.key = large->ht->rel->tuples[k].key;
+          res_tuple.payload = small->ht->rel->tuples[index+sm_low].key;
         }
         else {
-          res_tuple.key=small->ht->rel->tuples[index+sm_low].key;
-          res_tuple.payload=large->ht->rel->tuples[k].key;
+          res_tuple.key = small->ht->rel->tuples[index+sm_low].key;
+          res_tuple.payload = large->ht->rel->tuples[k].key;
         }
         addToResult(res_list,&res_tuple);
       }
-      index=bc->Chain[index];
+      index = bc->Chain[index];
     }
   }
 }
@@ -192,12 +157,12 @@ void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *re
  * @returns true or false
  */
 bool isPrime(uint64_t n) {
-    for(uint64_t i=2; i*i<=n; i++) {
-      if(n % i == 0) {
-        return false;
-      }
+  for(uint64_t i=2; i*i<=n; i++) {
+    if(n % i == 0) {
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
 /**
@@ -212,20 +177,20 @@ inline uint64_t findNextPrime(uint64_t n) {
 }
 
 b_chain * indexingSmallBucket(bucket_hash *small) {
-  b_chain * bc=new b_chain();
-  uint64_t bucket_size=small->b->high-small->b->low;
+  b_chain * bc = new b_chain();
+  uint64_t bucket_size = small->b->high - small->b->low;
 
-  bc->Chain=new int64_t[bucket_size];
-  PRIME_NUM=findNextPrime(bucket_size);
-  bc->Bucket=new int64_t[PRIME_NUM];
+  bc->Chain = new int64_t[bucket_size];
+  PRIME_NUM = findNextPrime(bucket_size);
+  bc->Bucket = new int64_t[PRIME_NUM];
 
-  for(int64_t j=0; j<PRIME_NUM; j++){
-    bc->Bucket[j]=-1;
+  for(uint64_t i=0; i<PRIME_NUM; i++){
+    bc->Bucket[i]=-1;
   }
 
   for(int64_t l=small->b->low; l<small->b->high; l++){
-    bc->Chain[l-small->b->low]=bc->Bucket[h2(small->ht->rel->tuples[l].payload)];
-    bc->Bucket[h2(small->ht->rel->tuples[l].payload)]=l-small->b->low;
+    bc->Chain[l-small->b->low] = bc->Bucket[h2(small->ht->rel->tuples[l].payload)];
+    bc->Bucket[h2(small->ht->rel->tuples[l].payload)] = l - small->b->low;
   }
 
   return bc;
@@ -240,55 +205,47 @@ b_chain * indexingSmallBucket(bucket_hash *small) {
  * @returns result list
  */
 result * radixHashJoin(relation * rel_R, relation * rel_S){
-  //printRelation(rel_R, "R");
-  //printRelation(rel_S, "S");
-
   hash_table * hash_table_R = reorderRelation(rel_R);
   hash_table * hash_table_S = reorderRelation(rel_S);
-  //DEBUG//std::cout << "reordering DONE\n";
-
-  //printRelation(hash_table_R->rel, "R\'");
-  //printRelation(hash_table_S->rel, "S\'");
 
   //Here should be the initialization of the 'list'//
   result *res_list;
   initResult(&res_list);
 
-  for(int64_t i=0; i<hash_table_R->psum.length; i++) {
+  // for each bucket
+  for(uint64_t i=0; i<hash_table_R->psum.length; i++) {
     bucket R_bucket,S_bucket;
     bucket_hash small,large;
     bool isReversed;
 
-    if(hash_table_R->psum.data[i]!=-1 && hash_table_S->psum.data[i] !=-1) {
-      R_bucket.low=hash_table_R->psum.data[i];
-      S_bucket.low=hash_table_S->psum.data[i];
+    R_bucket.low=hash_table_R->psum.data[i];
+    S_bucket.low=hash_table_S->psum.data[i];
 
-      R_bucket.high=set_high(hash_table_R,i+1);
-      S_bucket.high=set_high(hash_table_S,i+1);
+    R_bucket.high = (i==hash_table_R->psum.length-1)? rel_R->num_tuples: hash_table_R->psum.data[i+1];
+    S_bucket.high = (i==hash_table_S->psum.length-1)? rel_S->num_tuples: hash_table_S->psum.data[i+1];
 
-      if(R_bucket.high-R_bucket.low <= S_bucket.high-S_bucket.low) {
-        small.b=&R_bucket;
-        small.ht=hash_table_R;
+    if(R_bucket.high-R_bucket.low <= S_bucket.high-S_bucket.low) {
+      small.b=&R_bucket;
+      small.ht=hash_table_R;
 
-        large.b=&S_bucket;
-        large.ht=hash_table_S;
-        isReversed=false;
-      }
-      else {
-        small.b=&S_bucket;
-        small.ht=hash_table_S;
-
-        large.b=&R_bucket;
-        large.ht=hash_table_R;
-        isReversed=true;
-      }
-      b_chain *bc=indexingSmallBucket(&small);
-      compareBuckets(&small,&large,bc,res_list,isReversed);
-
-      delete[] bc->Chain;
-      delete[] bc->Bucket;
-      delete bc;
+      large.b=&S_bucket;
+      large.ht=hash_table_S;
+      isReversed=false;
     }
+    else {
+      small.b=&S_bucket;
+      small.ht=hash_table_S;
+
+      large.b=&R_bucket;
+      large.ht=hash_table_R;
+      isReversed=true;
+    }
+    b_chain *bc=indexingSmallBucket(&small);
+    compareBuckets(&small,&large,bc,res_list,isReversed);
+
+    delete[] bc->Chain;
+    delete[] bc->Bucket;
+    delete bc;
   }
 
   freeHashTableAndComponents(hash_table_R);

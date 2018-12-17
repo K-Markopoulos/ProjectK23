@@ -64,7 +64,7 @@ void addToResult(result * res, tuple_ * data){
  * @params res, the result struct
  * @params n, index of tuple (starting at 0)
  */
-tuple_ * getNthResult(result * res, int32_t n){
+tuple_ * getNthResult(result * res, uint64_t n){
     int32_t num_block = n / RESULT_BLOCK_MAX_TUPLES;
     int32_t num_tuple = n % RESULT_BLOCK_MAX_TUPLES;
     int32_t block_counter = 0;
@@ -78,6 +78,61 @@ tuple_ * getNthResult(result * res, int32_t n){
     if(num_block + 1 > bl->num_tuples)
       return NULL;
     return (tuple_ *) &bl->tuples[num_tuple];
+}
+
+/**
+ * Get current tuple in result and increment current to the next result
+ *
+ * @params res, the result struct
+ */
+tuple_ * getResult(result * res){
+  tuple_* value = res->current_tuple;
+  if(res->current_tuple_num < res->num_tuples){
+    res->current_tuple_num += 1;
+    int32_t index_tuple = res->current_tuple_num % RESULT_BLOCK_MAX_TUPLES;
+    if(index_tuple == 0){
+      res->current_block = res->current_block->next;
+      res->current_tuple = res->current_block->tuples;
+    }
+    else
+      res->current_tuple += 1;
+  } else {
+    return NULL;
+  }
+
+  return value;
+}
+
+/**
+ * Initialize iterator(current_tuple)
+ *
+ * @params res, the result struct
+ */
+void initIterator(result* res){
+  res->current_block = res->head;
+  res->current_tuple = res->current_block->tuples;
+  res->current_tuple_num = 0;
+}
+
+/**
+ * Set iterator(current_tuple) to the nth result
+ *
+ * @params res, the result struct
+ * @params n, index of tuple (starting at 0)
+ */
+void setIterator(result* res, uint64_t n){
+  int32_t num_block = n / RESULT_BLOCK_MAX_TUPLES;
+  res->current_tuple_num = n % RESULT_BLOCK_MAX_TUPLES;
+  int32_t block_counter = 0;
+  res->current_block = res->head;
+  while(block_counter++ != num_block){
+    res->current_block = res->current_block->next;
+    if(res->current_block == NULL)
+      return;
+  }
+  if(num_block + 1 > res->current_block->num_tuples)
+    return;
+  res->current_tuple = &res->current_block->tuples[res->current_tuple_num];
 }
 
 /**

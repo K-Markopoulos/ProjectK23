@@ -22,8 +22,9 @@ $(EXE): directories $(OBJ)
 	$(CC) -o $@ $(OBJ) $(CCFLAGS)
 	#
 	#	OK! now try the dataset by typing:
-	#
-	#	./runner < init
+	#		./runner < init
+	#	or automate it
+	#		time ./runner < init | ./check.sh ./workloads/small/small.result
 	#
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp

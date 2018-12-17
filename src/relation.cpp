@@ -121,8 +121,8 @@ uint64_t Relation::getTuple(int col, int tpl) const{
  *
  */
 uint64_t Relation::getTuple(const void* col, int tpl) const{
-  //return *((uint64_t*)col + tpl);
-  return *((uint64_t*)((char*)col + tpl*sizeof(uint64_t)));
+  return *((uint64_t*)col + tpl);
+  // return *((uint64_t*)((char*)col + tpl*sizeof(uint64_t)));
 }
 
 /** -----------------------------------------------------
