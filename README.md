@@ -4,7 +4,7 @@
 ## Parts
 
 * Part1: [DONE] Implementation of [Radix Hash Join](https://systems.ethz.ch/node/334) algorithm for two relations
-* Part2: Refining of part 1 for multiple relations
+* Part2: Execution of multiple join queries
 * Part3: Query optimization using threads
 
 ## Run in a terminal/bash
@@ -14,11 +14,13 @@
 2. cd ProjectK23
 3. make
 ```
-Run default, test1 or test2
+Run executable
 ```
-./join
-./join test1
-./join test2
+./runner < init
+```
+Run test to see if the results are correct
+```
+./runner < init | ./check.sh workloads/small/small.result
 ```
 
 ## Built With
