@@ -13,7 +13,7 @@ OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 TEST_OBJ = $(TEST_SRC:$(TEST_SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 F_OBJ = $(filter-out obj/main.o,$(OBJ))
 
-CCFLAGS = -std=c++11 -g3
+CCFLAGS = -std=c++11 -O3
 
 .PHONY: clean
 .PHONY: directories

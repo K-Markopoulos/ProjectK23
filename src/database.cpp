@@ -135,12 +135,37 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
     vector<uint64_t>* column = intermediate->getColumn(filter->relId);
     vector<uint64_t> new_column;
     // compare
-    for(int t = 0; t < column->size(); t++){
-      int64_t value = filter->relation->getTuple(filter->col, (*column)[t]);
-      if(op(filter->op, value, filter->value)){
-        new_column.push_back((*column)[t]);
-      }
+    uint64_t count = 0;
+    switch(filter->op){
+      case '>':
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) > filter->value)
+            count++;
+        new_column.reserve(count);
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) > filter->value)
+            new_column.push_back((*column)[t]);
+        break;
+      case '<':
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) < filter->value)
+            count++;
+        new_column.reserve(count);
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) < filter->value)
+            new_column.push_back((*column)[t]);
+        break;
+      case '=':
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) == filter->value)
+            count++;
+        new_column.reserve(count);
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) == filter->value)
+            new_column.push_back((*column)[t]);
+        break;
     }
+
     // update intermediate
     intermediate->update(filter->relId, &new_column);
   } else {
