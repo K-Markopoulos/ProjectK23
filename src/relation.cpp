@@ -12,7 +12,7 @@
 #include "../inc/query.hpp"
 #include "../inc/radix.h"
 #include "../inc/utils.hpp"
-
+#include "../inc/stats.hpp"
 
 /** -----------------------------------------------------
  * Relation constructor

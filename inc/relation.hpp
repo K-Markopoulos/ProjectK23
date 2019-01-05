@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "../inc/radix.h"
+#include "../inc/stats.hpp"
 
 class Relation{
   int _id;
@@ -13,6 +14,8 @@ class Relation{
   void* memblock;
   size_t memsize;
   std::vector<void *> cols;
+  std::vector<Stats *> stats;
+
   public:
     Relation(std::string fileName);
     //  load relation in memory
