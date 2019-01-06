@@ -62,6 +62,13 @@ int main(int argc, char* argv[]) {
     js->Schedule(job3);
   }
 
+  js->Barrier();
+
+  for (int i = 0; i < num_jobs; i++){
+    Job* job = rand() % 2 ? job1: job2;
+    js->Schedule(job);
+  }
+
   js->Stop();
 
   delete job1;

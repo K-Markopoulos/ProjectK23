@@ -98,7 +98,20 @@ void* JobScheduler::work(void* vargs) {
 
 
 void JobScheduler::Barrier(){
+  LOG("Waiting all jobs to be executed...\n");
+  if(shutdown){
+    LOG("WARNING! Barrier call after shutdown\n");
+  }
+  
+  pthread_mutex_lock(&qlock);
 
+  while (jobQueue.size()) {
+    pthread_cond_wait(&q_empty, &qlock);
+  }
+
+  pthread_mutex_unlock(&qlock);
+
+  LOG("All jobs have been executed!\n");
 }
 
 JobID JobScheduler::Schedule(Job* job) {
