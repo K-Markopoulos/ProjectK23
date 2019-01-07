@@ -66,9 +66,14 @@ void Relation::loadRelation(){
   LOG("\t Cols:%lu Tuples:%lu\n", this->num_cols, this->num_tuples);
 
   this->cols.reserve(num_cols);
+  //STATS
+  this->stats.reserve(num_cols);
+
   for(int col = 0; col < this->num_cols; col++){
     LOG("\tAdding col starting with %lu\n", *(uint64_t*)addr);
     this->cols.push_back((void*)addr);
+    //STATS
+    this->stats.push_back(Stats(this, col));
     addr += sizeof(uint64_t) * num_tuples;
   }
 

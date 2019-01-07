@@ -10,7 +10,11 @@ class Cardinality{
 public:
   Cardinality(Stats&,Stats&);
   // assess cardinality using overloading
+  // DUMMY ARGUEMENTS
   void assess(uint64_t);
+  void assess(char ,uint64_t);
   void assess(uint64_t,uint64_t);
-  void assess();
+  void assess(1);
+  void assess(2);
+  void assess(3);
 }
