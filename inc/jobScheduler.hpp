@@ -3,7 +3,12 @@
 #include <queue>
 #include <pthread.h>
 
+#define NUM_THREADS 8
+
 typedef int JobID;
+
+class JobScheduler;
+extern JobScheduler* jobScheduler;
 
 // Abstract Class Job
 class Job {
@@ -24,13 +29,15 @@ class JobScheduler {
     pthread_mutex_t qlock;
     pthread_cond_t q_not_empty;
     pthread_cond_t q_empty;
+    pthread_cond_t job_done;
+    int active;
     bool shutdown;
     bool dont_accept;
 
     // Main routine task for threads
     void *work(void* vargs);
 
-    // Calls work function. Compatible with pthread_create.
+    // Wrapper of work function. Compatible with pthread_create.
     friend void* work_(void* This);
   public:
     JobScheduler() = default;
@@ -46,7 +53,7 @@ class JobScheduler {
 
     // Waits Until executed all jobs in the queue.
     void Barrier();
-
+    
     // Add a job in the queue and returns a JobId
     JobID Schedule(Job* job);
 

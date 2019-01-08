@@ -6,9 +6,6 @@
 #include "../inc/radix.h"
 #include "../inc/result.h"
 
-#define RESULT_BLOCK_SIZE 1024*1024
-#define RESULT_BLOCK_MAX_TUPLES (1024*1024 / sizeof(tuple_))
-
 
 /**
  * Initialize result list
@@ -59,6 +56,7 @@ void addToResult(result * res, tuple_ * data){
 }
 
 /**
+ * (Replaced by getResult)
  * Get Nth tuple from result list
  *
  * @params res, the result struct
@@ -87,15 +85,18 @@ tuple_ * getNthResult(result * res, uint64_t n){
  */
 tuple_ * getResult(result * res){
   tuple_* value = res->current_tuple;
-  if(res->current_tuple_num < res->num_tuples){
+  if (res->current_tuple_num < res->num_tuples) {
     res->current_tuple_num += 1;
-    int32_t index_tuple = res->current_tuple_num % RESULT_BLOCK_MAX_TUPLES;
-    if(index_tuple == 0){
+    res->current_tuple_index += 1;
+    // int32_t index_tuple = res->current_tuple_num % RESULT_BLOCK_MAX_TUPLES;
+    if (res->current_tuple_index == res->current_block->num_tuples) {
       res->current_block = res->current_block->next;
       res->current_tuple = res->current_block->tuples;
+      res->current_tuple_index = 0;
     }
-    else
+    else {
       res->current_tuple += 1;
+    }
   } else {
     return NULL;
   }
@@ -112,6 +113,7 @@ void initIterator(result* res){
   res->current_block = res->head;
   res->current_tuple = res->current_block->tuples;
   res->current_tuple_num = 0;
+  res->current_tuple_index = 0;
 }
 
 /**
@@ -133,6 +135,23 @@ void setIterator(result* res, uint64_t n){
   if(num_block + 1 > res->current_block->num_tuples)
     return;
   res->current_tuple = &res->current_block->tuples[res->current_tuple_num];
+}
+
+/**
+ * Squash a list of results in one, by linking their blocks
+ *
+ * @params res_list, list of results
+ * @params list_size, size of list
+ */
+void squashResults(result** res_list, int list_size) {
+  result* res = res_list[0];
+
+  for(int i = 1; i < list_size; i++) {
+    res->num_tuples += res_list[i]->num_tuples;
+    res->num_blocks += res_list[i]->num_blocks;
+    res->last->next = res_list[i]->head;
+    res->last = res_list[i]->last;
+  }
 }
 
 /**

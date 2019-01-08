@@ -2,6 +2,10 @@
 #include <iostream>
 #include <stdint.h>
 
+// 1st hash function
+#define H1_LAST_BITS 8
+#define h1(X) (X & ((1 << H1_LAST_BITS) - 1))
+
 typedef struct tuple_ tuple_;
 typedef struct relation relation;
 typedef struct hash_table hash_table;
@@ -58,7 +62,7 @@ inline uint64_t findNextPrime(uint64_t n);
 inline uint64_t h2(int64_t num);
 hash_table * reorderRelation(relation * rel);
 relation * createRelation(relation * rel, array_int psum_original);
-array_int createPsum(array_int hist);
-array_int createHistogram(relation * rel);
+array_int * createPsum(array_int * hist);
+array_int * createHistogram(relation * rel);
 void freeHashTableAndComponents(hash_table *);
 void destroyRelation(relation* rel);

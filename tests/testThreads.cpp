@@ -48,9 +48,6 @@ int main(int argc, char* argv[]) {
 
   LOG("Starting test with %d threads\n", num_threads);
   JobScheduler* js = new JobScheduler();
-  Job* job1 = new CountingJob();
-  Job* job2 = new PrintingJob();
-  Job* job3 = new SleepingJob();
 
   if (!js->Init(num_threads)) {
     fprintf(stderr, "JobScheduler initialization error.\n");
@@ -58,22 +55,18 @@ int main(int argc, char* argv[]) {
   }
 
   for (int i = 0; i < num_jobs; i++){
-    // Job* job = rand() % 2 ? job1: job2;
-    js->Schedule(job3);
+    js->Schedule(new SleepingJob());
   }
 
   js->Barrier();
+  printf("\n\n\nThis is after barrier\n\n\n");
 
   for (int i = 0; i < num_jobs; i++){
-    Job* job = rand() % 2 ? job1: job2;
-    js->Schedule(job);
+    if(rand() % 2)  js->Schedule(new CountingJob());
+    else            js->Schedule(new PrintingJob());
   }
 
   js->Stop();
-
-  delete job1;
-  delete job2;
-  delete job3;
 
   if (!js->Destroy()) {
     fprintf(stderr, "JobScheduler failed to be destroyed.\n");

@@ -3,10 +3,9 @@
 #include <string.h>
 #include "../inc/radix.h"
 #include "../inc/result.h"
-
-// 1st hash function
-#define H1_LAST_BITS 8
-#define h1(X) (X & ((1 << H1_LAST_BITS) - 1))
+#include "../inc/jobScheduler.hpp"
+#include "../inc/jobs.hpp"
+#include "../inc/utils.hpp"
 
 uint64_t PRIME_NUM;
 
@@ -41,14 +40,21 @@ inline uint64_t h2(int64_t num) {
  * @params rel, the relation
  * @returns Histogram
  */
-array_int createHistogram(relation * rel){
-  array_int hist;
-  hist.length = (1 << H1_LAST_BITS);
-  hist.data = (int64_t*) calloc(sizeof(int64_t), hist.length);
+array_int* createHistogram(relation * rel){
+  array_int * hist;
+  int low = 0, high = 0, chunk = rel->num_tuples / NUM_THREADS;
+  hist = (array_int*) malloc(sizeof(array_int) * NUM_THREADS);
 
-  for(uint64_t i = 0; i < rel->num_tuples; i++){
-    hist.data[h1(rel->tuples[i].payload)]++;
+  for (int i = 0; i < NUM_THREADS; i++) {
+    low = high;
+    high = (i == NUM_THREADS-1)? rel->num_tuples: (i+1) * chunk;
+    hist[i].length = (1 << H1_LAST_BITS);
+    hist[i].data = (int64_t*) calloc(sizeof(int64_t), hist[i].length);
+    Job* job = new HistogramJob(low, high, &hist[i], rel);
+    jobScheduler->Schedule(job);
   }
+
+  jobScheduler->Barrier();
   return hist;
 }
 
@@ -58,13 +64,29 @@ array_int createHistogram(relation * rel){
  * @params hist, the histogram
  * @returns Psum
  */
-array_int createPsum(array_int hist){
-  array_int psum;
-  psum.length = hist.length;
-  psum.data = (int64_t*) malloc(sizeof(int64_t)*psum.length);
-  psum.data[0] = 0;
-  for(uint64_t i=1; i < psum.length; i++)
-    psum.data[i] = psum.data[i-1] + hist.data[i-1];
+array_int* createPsum(array_int* hist){
+  array_int* psum, hist_total;
+  psum = (array_int*) malloc(sizeof(array_int) * NUM_THREADS);
+  hist_total.data = (int64_t*) calloc(hist[0].length, sizeof(int64_t));
+
+  for(uint64_t i=0; i < hist[0].length; i++)
+    for (int t = 0; t < NUM_THREADS; t++)
+      hist_total.data[i] += hist[t].data[i];
+
+  for (int t = 0; t < NUM_THREADS; t++) {
+    psum[t].length = hist[t].length;
+    psum[t].data = (int64_t*) malloc(sizeof(int64_t)*psum[t].length);
+    if(!t){
+      psum[t].data[0] = 0;
+      for(uint64_t i=1; i < psum[t].length; i++)
+        psum[t].data[i] = psum[t].data[i-1] + hist_total.data[i-1];
+    } else {
+      for(uint64_t i=0; i < psum[t].length; i++)
+        psum[t].data[i] = psum[t-1].data[i] + hist[t-1].data[i];
+    }
+  }
+
+  free(hist_total.data);
   return psum;
 }
 
@@ -75,27 +97,21 @@ array_int createPsum(array_int hist){
  * @params psum_original, the Psum array
  * @returns relation, the reordered relation
  */
-relation * createRelation(relation * rel, array_int psum_original){
-  //make a psum copy
-  array_int psum;
-  psum.length = psum_original.length;
-  psum.data = (int64_t*) malloc(psum.length * sizeof(int64_t));
-  memcpy(psum.data, psum_original.data, psum.length * sizeof(int64_t));
-
+relation * createRelation(relation * rel, array_int* psum){
   //init new_rel
+  int low = 0, high = 0, chunk = rel->num_tuples / NUM_THREADS;
   relation * new_rel = (relation*) malloc(sizeof(relation));
   new_rel->num_tuples = rel->num_tuples;
   new_rel->tuples = (tuple_*) malloc(rel->num_tuples * sizeof(tuple_));
 
-  int64_t index;
-  //insert tuples to new_rel
-  for(int64_t i = 0; i < rel->num_tuples; i++){
-    index = h1(rel->tuples[i].payload);
-    new_rel->tuples[psum.data[index]] = rel->tuples[i];
-    psum.data[index]++;
+  for (int t = 0; t < NUM_THREADS; t++) {
+    low = high;
+    high = (t == NUM_THREADS-1)? rel->num_tuples: (t+1) * chunk;
+    Job* job = new PartitionJob(low, high, rel, new_rel, &psum[t]);
+    jobScheduler->Schedule(job);
   }
 
-  free(psum.data);
+  jobScheduler->Barrier();
   return new_rel;
 }
 
@@ -109,11 +125,19 @@ relation * createRelation(relation * rel, array_int psum_original){
 hash_table * reorderRelation(relation * rel){
   hash_table * result = (hash_table*) malloc(sizeof(hash_table));
 
-  array_int hist = createHistogram(rel);
-  result->psum = createPsum(hist);
-  result->rel = createRelation(rel, result->psum);
+  array_int* hist = createHistogram(rel);
+  array_int* psum = createPsum(hist);
 
-  free(hist.data);
+  result->psum.length = psum[0].length;
+  result->psum.data = (int64_t*) malloc(psum[0].length * sizeof(int64_t));
+  memcpy(result->psum.data, psum[0].data, psum[0].length * sizeof(int64_t));
+
+  result->rel = createRelation(rel, psum);
+
+  for (int t = 0; t < NUM_THREADS; t++){
+    free(hist[t].data);
+    free(psum[t].data);
+  }
   return result;
 }
 
@@ -208,9 +232,8 @@ result * radixHashJoin(relation * rel_R, relation * rel_S){
   hash_table * hash_table_R = reorderRelation(rel_R);
   hash_table * hash_table_S = reorderRelation(rel_S);
 
-  //Here should be the initialization of the 'list'//
-  result *res_list;
-  initResult(&res_list);
+  int list_size = hash_table_R->psum.length;
+  result **res_list = (result**) malloc(list_size * sizeof(result*));
 
   // for each bucket
   for(uint64_t i=0; i<hash_table_R->psum.length; i++) {
@@ -240,17 +263,22 @@ result * radixHashJoin(relation * rel_R, relation * rel_S){
       large.ht=hash_table_R;
       isReversed=true;
     }
-    b_chain *bc=indexingSmallBucket(&small);
-    compareBuckets(&small,&large,bc,res_list,isReversed);
 
-    delete[] bc->Chain;
-    delete[] bc->Bucket;
-    delete bc;
+    initResult(&res_list[i]);
+    b_chain *bc=indexingSmallBucket(&small);
+    jobScheduler->Schedule(new JoinJob(&small, &large, bc, res_list[i], isReversed));
   }
+
+  jobScheduler->Barrier();
 
   freeHashTableAndComponents(hash_table_R);
   freeHashTableAndComponents(hash_table_S);
-  return res_list;
+
+  squashResults(res_list, list_size);
+  result* res = res_list[0];
+
+  free(res_list);
+  return res;
 }
 
 /**

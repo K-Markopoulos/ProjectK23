@@ -9,6 +9,7 @@
 #define LOGGER "JobScheduler"
 #endif
 
+#undef DEBUG
 
 void* work_(void* This) {
   return ((JobScheduler*)This)->work(NULL);
@@ -36,6 +37,10 @@ bool JobScheduler::Init(int num_of_threads) {
     return false;
   }
   if (pthread_cond_init(&q_empty, NULL)) {
+    fprintf(stderr, "CV initialization error.\n");
+    return false;
+  }
+  if (pthread_cond_init(&job_done, NULL)) {
     fprintf(stderr, "CV initialization error.\n");
     return false;
   }
@@ -82,6 +87,7 @@ void* JobScheduler::work(void* vargs) {
       }
     }
 
+    active++;
     Job* job = jobQueue.front();
     jobQueue.pop();
     LOG("Thread(%lu) got a job from queue, remaining jobs %lu\n", pthread_self(), jobQueue.size());
@@ -93,25 +99,29 @@ void* JobScheduler::work(void* vargs) {
 
     LOG("Running job\n");
     job->Run();
+    pthread_mutex_lock(&qlock);
+    active--;
+    pthread_mutex_unlock(&qlock);
+    pthread_cond_signal(&job_done);
+
+    delete job;
   }
 }
 
 
 void JobScheduler::Barrier(){
-  LOG("Waiting all jobs to be executed...\n");
+  LOG("Waiting for queued jobs to execute\n");
   if(shutdown){
     LOG("WARNING! Barrier call after shutdown\n");
   }
-  
-  pthread_mutex_lock(&qlock);
-
-  while (jobQueue.size()) {
-    pthread_cond_wait(&q_empty, &qlock);
-  }
 
   pthread_mutex_unlock(&qlock);
+  while (jobQueue.size() || active) {
+    pthread_cond_wait(&job_done, &qlock);
+  }
+  pthread_mutex_unlock(&qlock);
 
-  LOG("All jobs have been executed!\n");
+  LOG("All jobs were executed\n");
 }
 
 JobID JobScheduler::Schedule(Job* job) {
