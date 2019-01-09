@@ -159,3 +159,7 @@ relation* Relation::buildRelation(int col){
 std::vector<Stats *>* Relation::getStats(){
   return &stats;
 }
+
+std::vector<Stats *> Relation::copyStatsVector(){
+  return stats;
+}

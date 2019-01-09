@@ -1,19 +1,26 @@
 #include <iostream>
 #include "../inc/stats.hpp"
 
+using namespace std;
+
 class Cardinality{
-  Stats* statsA;
-  Stats* statsB;
-  uint64_t la,ua,fa,da; // assessments for new statistic values of column A
-  uint64_t lb,ub,fb,db; // assessments for new statistic values of column B
+  const Query* query;
+  vector<uint64_t> relations;
+  vector<vector<Stats>> stats;
 
 public:
-  Cardinality(Stats&,Stats&);
+  Cardinality(Query*);
+  // Get stats vector
+  vector<vector<Stats>>& getStatsVector();
+  // Get Relation stats
+  vector<Stats>& getRelStats(uint64_t);
+  // Get Column stats
+  Stats& getStats(uint64_t, uint64_t);
+  // Get existing Relations
+  vector<uint64_t> getRelations();
   // assess cardinality using overloading
   // DUMMY ARGUEMENTS
-  void assess(uint64_t);
-  void assess(char ,uint64_t);
-  void assess(uint64_t,uint64_t);
+  void assess(Filter*);
   void assess(1);
   void assess(2);
   void assess(3);

@@ -35,4 +35,6 @@ class Stats{
   void setu(uint64_t);
   void setf(uint64_t);
   void setd(uint64_t);
+  // Copy self
+  Stats copyStats();
 };

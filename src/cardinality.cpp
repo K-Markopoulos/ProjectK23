@@ -4,85 +4,79 @@
 #include "../inc/stats.hpp"
 #include "../inc/cardinality.hpp"
 #include "../inc/relation.hpp"
+#include "../inc/query.hpp"
 
-Cardinality(Stats& sA){
-  this->statsA = sA;
+vector<Stats> createCopy(Filter* f){
+  std::vector<Stats*> stat_pointers = f->relation->copyStatsVector();
+  std::vector<Stats> stats;
+  uint64_t s = stat_pointers.size();
+  stats.size(s);
+  for(uint64_t i=0; i<s; i++){
+    stats[i] = stat_pointers[i]->copyStats();
+  }
+  return stats;
 }
 
-Cardinality(Stats& sA, Stats& sB){
-  this->statsA = sA;
-  this->statsB = sB;
+bool exists(vector<uint64_t> rel, uint64_t v){
+  for(uint64_t x : rel)
+    if(x == v)
+      return true;
+  return false;
 }
 
-void Cardinality::assess(uint64_t k){
-  this->la = k;
-  this->ua = k;
-  if(k <= this->statsA->getd()){
-    this->da = 1;
-    this->fa = this->statsA->getf() / this->statsA->getd();
+Cardinality(Query* q){
+  this->query = q;
+}
+
+void Cardinality::mainAssess(){
+  for(Filter* f : this->query->filters){
+    this->assess(f);
+  }
+}
+
+void Cardinality::assess(Filter* f){
+  if(!exists(getRelations(), f->relation->getId())){
+    stats.push_back(createCopy(f));
+  }
+
+  Stats* curr_stats = getStats(f->relId, f->col);
+  f_old = curr_stats->getf();
+  d_old = curr_stats->getd();
+
+  // Current Column
+  if(f->op == '='){
+    if(f->value >= curr_stats->getl() && f->value <= curr_stats->getu()){
+      curr_stats->setd(1);
+      curr_stats->setf(f_old / d_old);
+    }
+    else{
+      curr_stats->setd(0);
+      curr_stats->setf(0);
+    }
   }
   else{
-    this->da = 0;
-    this->fa = 0;
-  }
+    uint64_t k2 = f->value;
+    uint64_t l_old = curr_stats->getl();
+    uint64_t u_old = curr_stats->getu();
+    k1 = (op == '<') ? l_old : u_old;
+    (k1 > k2) ? swap(k1,k2);
 
-  Relation* rel = this->statsA->getRelation();
-  void* col = this->statsA->getColumn();
-  for(Stats* s : rel->stats){
-    if(s->getColumn() != col){
-      s->setd(s->getd() * (1 - pow(1 - this->fa / this->statsA->getf(), s->getf() / s->getd())));
-      s->setf(this->fa);
+    curr_stats->setl(k1);
+    curr_stats->setu(k2);
+    curr_stats->setd(d_old * (k2 - k1) / (u_old - l_old));
+    curr_stats->setf(f_old * (k2 - k1) / (u_old - l_old));
+  }
+  // Rest Columns
+  for(uint64_t i=0; i<f->relation->getColumnCount(); i++){
+    if(i != f->col){
+      Stats* s = getStats(f->relId,i);
+      s->setd(s->getd() * (1 - pow(1 - curr_stats->getf() / f_old, s->getf() / s->getd())));
+      s->setf(curr_stats->getf());
     }
   }
 }
 
-void Cardinality::assess(char op, uint64_t k2){
-  uint64_t k1;
-  uint64_t l = this->statsA->getl();
-  uint64_t u = this->statsA->getu();
-
-  (op == '<') ? k1 = l;
-  (op == '>') ? k1 = u;
-  (k1 > k2) ? swap(k1,k2);
-
-  this->la = k1;
-  this->ua = k2;
-  this->da = this->statsA->getd() * (k2 - k1) / (u - l);
-  this->fa = this->statsA->getf() * (k2 - k1) / (u - l);
-
-  Relation* rel = this->statsA->getRelation();
-  void* col = this->statsA->getColumn();
-  for(Stats* s : rel->stats){
-    if(s->getColumn() != col){
-      s->setd(s->getd() * (1 - pow(1 - this->fa / this->statsA->getf(), s->getf() / s->getd())));
-      s->setf(this->fa);
-    }
-  }
-}
-
-void Cardinality::assess(uint64_t k1, uint64_t k2){
-  uint64_t l = this->statsA->getl();
-  uint64_t u = this->statsA->getu();
-
-  (k1 < l) ? k1 = l;
-  (k2 > u) ? k2 = u;
-
-  this->la = k1;
-  this->ua = k2;
-  this->da = this->statsA->getd() * (k2 - k1) / (u - l);
-  this->fa = this->statsA->getf() * (k2 - k1) / (u - l);
-
-  Relation* rel = this->statsA->getRelation();
-  void* col = this->statsA->getColumn();
-  for(Stats* s : rel->stats){
-    if(s->getColumn() != col){
-      s->setd(s->getd() * (1 - pow(1 - this->fa / this->statsA->getf(), s->getf() / s->getd())));
-      s->setf(this->fa);
-    }
-  }
-}
-
-void Cardinality::assess(1){
+void Cardinality::assess(Predicate* p){
   uint64_t old_la = this->statsA->getl();
   uint64_t old_lb = this->statsB->getl();
   uint64_t old_ua = this->statsA->getu();
@@ -169,4 +163,20 @@ void Cardinality::assess(3){
   for(Stats* s : rel->stats)
     if(s->getColumn() != col)
       s->setf(this->fa);
+}
+
+std::vector<vector<Stats>>& Cardinality::getStatsVector(){
+  return &stats;
+}
+
+std::vector<Stats>& Cardinality::getRelStats(uint64_t i){
+  return &stats[i];
+}
+
+Stats& Cardinality::getStats(uint64_t i, uint64_t j){
+  return &stats[i][j];
+}
+
+std::vector<uint64_t> Cardinality::getRelations(){
+  return relations;
 }

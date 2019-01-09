@@ -67,6 +67,10 @@ string Database::run(const Query& query){
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
 
+  // Cardinality Assessment
+  Cardinality car = Cardinality(query);
+  car.mainAssess();
+
   //  run filters
   const Filter* filter;
   int fCount = 0;
