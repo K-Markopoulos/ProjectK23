@@ -1,12 +1,14 @@
 #include <iostream>
 #include <vector>
-#include "../inc/stats.hpp"
+#include "../inc/relation.hpp"
 
 #define N_SIZE 40000000
 
-Stats::Stats(Relation& rel, int col){
+Stats::Stats(Relation* rel, int col){
   this->relation = rel;
   this->column = this->relation->getColumn(col);
+  this->setluf();
+  this->setd();
 }
 
 Relation* Stats::getRelation(){
@@ -27,7 +29,7 @@ uint64_t Stats::getTupleCount(){
 
 void Stats::setluf(){
   this->f = getTupleCount();
-  this->l = this->u = getTuple(this->colum, 0);
+  this->l = this->u = getTuple(this->column, 0);
   for(uint64_t i = 1; i< this->f; i++){
     uint64_t v = getTuple(this->column, i);
     if(v < this->l)
@@ -38,29 +40,25 @@ void Stats::setluf(){
 }
 
 void Stats::setd(){
-  this->d = bool_process((this->u - this->l + 1)<N_SIZE);
-}
-
-uint64_t Stats::bool_process(true){
   uint64_t count = 0;
-  std::vector<bool> bool_vector((this->u - this->l + 1), false); (*)
-  for(uint64_t i; i<this->f; i++)
-    if(bool_vector[getTuple(this->column, i)-this->u] != true){
-      bool_vector[getTuple(this->column, i)-this->u] = true;
-      count ++;
+  if((this->u - this->l + 1)<N_SIZE){
+    std::vector<bool> bool_vector((this->u - this->l + 1), false);
+    for(uint64_t i=0; i<this->f; i++){
+      if(bool_vector[getTuple(this->column, i) - this->l] != true){
+        bool_vector[getTuple(this->column, i) - this->l] = true;
+        count ++;
+      }
     }
-  return count;
-}
-
-uint64_t Stats::bool_process(false){
-  uint64_t count = 0;
-  std::vector<bool> bool_vector(N_SIZE, false); (*)
-  for(uint64_t i; i<this->f; i++)
-    if(bool_vector[getTuple(this->column, i)-this->u % N_SIZE] != true){
-      bool_vector[getTuple(this->column, i)-this->u % N_SIZE] = true;
-      count ++;
-    }
-  return count;
+  }
+  else{
+    std::vector<bool> bool_vector(N_SIZE, false);
+    for(uint64_t i; i<this->f; i++)
+      if(bool_vector[getTuple(this->column, i)-this->l % N_SIZE] != true){
+        bool_vector[getTuple(this->column, i)-this->l % N_SIZE] = true;
+        count ++;
+      }
+  }
+  this->d = count;
 }
 
 uint64_t Stats::getl(){

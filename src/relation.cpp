@@ -12,7 +12,6 @@
 #include "../inc/query.hpp"
 #include "../inc/radix.h"
 #include "../inc/utils.hpp"
-#include "../inc/stats.hpp"
 
 /** -----------------------------------------------------
  * Relation constructor
@@ -73,7 +72,7 @@ void Relation::loadRelation(){
     LOG("\tAdding col starting with %lu\n", *(uint64_t*)addr);
     this->cols.push_back((void*)addr);
     //STATS
-    this->stats.push_back(Stats(this, col));
+    this->stats.emplace_back(new Stats(this, col));
     addr += sizeof(uint64_t) * num_tuples;
   }
 
@@ -155,4 +154,8 @@ relation* Relation::buildRelation(int col){
     res->tuples[t].payload = this->getTuple(col, t);
   }
   return res;
+}
+
+std::vector<Stats *>* Relation::getStats(){
+  return &stats;
 }

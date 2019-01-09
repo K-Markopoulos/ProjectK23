@@ -12,6 +12,7 @@ TEST_SRC = $(wildcard $(TEST_SRC_DIR)/*.cpp)
 OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 TEST_OBJ = $(TEST_SRC:$(TEST_SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 F_OBJ = $(filter-out obj/main.o,$(OBJ))
+T_OBJ = $(filter-out obj/cardinality.o,$(F_OBJ))
 
 CCFLAGS = -std=c++11 -O3
 
@@ -69,4 +70,10 @@ test_relation: $(F_OBJ) ./obj/testRelation.o
 	#
 	# OK! now try ./test_relation.sh
 	# (disable LOG for test to work)
+	#
+
+test_stats: $(T_OBJ) ./obj/testStats.o
+	$(CC) -o $@ $^ $(CCFLAGS)
+	#
+	# OK! now try echo -e '\n' | cat ./workloads/small/small.init - ./workloads/small/small.work | ./test_parsing
 	#

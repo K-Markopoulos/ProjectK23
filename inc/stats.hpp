@@ -1,8 +1,9 @@
 #include <iostream>
-#include "../inc/relation.hpp"
+
+class Relation;
 
 class Stats{
-  Relation* relation;
+  Relation *relation;
   void * column;
   uint64_t l; //lower value of column A
   uint64_t u; //upper value of column A
@@ -11,7 +12,7 @@ class Stats{
 
 
   public:
-  Stats(Relation&, int);
+  Stats(Relation*, int);
   // get relation reference
   Relation* getRelation();
   // get column reference
@@ -24,9 +25,6 @@ class Stats{
   void setluf();
   // set the value of d
   void setd();
-  // process a boolean vector to count distinct values
-  uint64_t bool_process(true);
-  uint64_t bool_process(false);
   // getters for each statistic value
   uint64_t getl();
   uint64_t getu();
@@ -37,4 +35,4 @@ class Stats{
   void setu(uint64_t);
   void setf(uint64_t);
   void setd(uint64_t);
-}
+};

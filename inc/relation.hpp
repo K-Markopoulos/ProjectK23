@@ -34,6 +34,8 @@ class Relation{
     uint64_t getTupleCount() const;
     // build relation of [rowId,value] tuples
     relation* buildRelation(int col);
+    // get Statistic vaulues of a relation
+    std::vector<Stats *>* getStats();
     // destructor
     ~Relation();
 };
