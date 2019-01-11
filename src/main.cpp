@@ -2,13 +2,17 @@
 #include "../inc/database.hpp"
 #include "../inc/query.hpp"
 #include "../inc/utils.hpp"
+#include "../inc/jobScheduler.hpp"
 
 Database* db;
+JobScheduler* jobScheduler;
 
 using namespace std;
 
 int main(int argc, char* argv[]) {
   db = new Database();
+  jobScheduler = new JobScheduler();
+  jobScheduler->Init(NUM_THREADS);
   string line;
 
   //phase 1: reading relations' paths
@@ -33,6 +37,9 @@ int main(int argc, char* argv[]) {
   }
   cout << endl;
 
+  jobScheduler->Stop();
+  jobScheduler->Destroy();
   delete db;
+  delete jobScheduler;
   return 0;
 }

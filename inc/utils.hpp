@@ -15,7 +15,8 @@
 // #define SKIP_DATA
 // #define DEBUG
 #ifdef DEBUG
-#define LOG(...) fprintf(stdout,"[DEBUG]: "); fprintf( stdout, __VA_ARGS__ );
+#define LOGGER "DEBUG"
+#define LOG(...) fprintf(stdout,"[%s]: ", LOGGER); fprintf( stdout, __VA_ARGS__ );
 #else
 #define LOG(...) do{ } while ( 0 )
 #endif
