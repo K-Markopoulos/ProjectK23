@@ -13,7 +13,7 @@
 
 // #define PRINT_IR
 // #define SKIP_DATA
-#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
 #define LOGGER "DEBUG"
 #define LOG(...) fprintf(stdout,"[%s]: ", LOGGER); fprintf( stdout, __VA_ARGS__ );

@@ -61,9 +61,11 @@ bool JobScheduler::Destroy() {
   }
   num_threads = 0;
   free(threads);
+  pthread_mutex_unlock(&qlock);
   pthread_mutex_destroy(&qlock);
   pthread_cond_destroy(&q_not_empty);
   pthread_cond_destroy(&q_empty);
+  pthread_cond_destroy(&job_done);
   return true;
 }
 
@@ -90,14 +92,14 @@ void* JobScheduler::work(void* vargs) {
     active++;
     Job* job = jobQueue.front();
     jobQueue.pop();
-    LOG("Thread(%lu) got a job from queue, remaining jobs %lu\n", pthread_self(), jobQueue.size());
+    // LOG("Thread(%lu) got a job from queue, remaining jobs %lu\n", pthread_self(), jobQueue.size());
     if (jobQueue.size() == 0 && !shutdown) {
       pthread_cond_signal(&q_empty);
     }
     pthread_mutex_unlock(&qlock);
 
 
-    LOG("Running job\n");
+    LOG("Thread(%lu) running the job\n", pthread_self());
     job->Run();
     pthread_mutex_lock(&qlock);
     active--;
@@ -115,7 +117,7 @@ void JobScheduler::Barrier(){
     LOG("WARNING! Barrier call after shutdown\n");
   }
 
-  pthread_mutex_unlock(&qlock);
+  pthread_mutex_lock(&qlock);
   while (jobQueue.size() || active) {
     pthread_cond_wait(&job_done, &qlock);
   }
@@ -129,19 +131,20 @@ JobID JobScheduler::Schedule(Job* job) {
     return -1;
   }
 
-  static JobID id = 0;
-  LOG("Scheduling new job: %d\n", id);
+  LOG("Scheduling new job: %d\n", job->id);
 
   pthread_mutex_lock(&qlock);
 
   jobQueue.push(job);
   if(jobQueue.size() == 1){
+    pthread_mutex_unlock(&qlock);
     pthread_cond_signal(&q_not_empty);
+  } else {
+    pthread_mutex_unlock(&qlock);
   }
 
-  pthread_mutex_unlock(&qlock);
 
-  return id++;
+  return job->id;
 }
 
 void JobScheduler::Stop() {

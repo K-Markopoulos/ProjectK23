@@ -33,13 +33,13 @@ class PartitionJob: public Job {
 };
 
 class JoinJob: public Job {
-  bucket_hash* small;
-  bucket_hash* large;
+  bucket_hash small;
+  bucket_hash large;
   b_chain* bc;
   result* res;
   bool isReversed;
   public:
-    JoinJob(bucket_hash *small,bucket_hash *large,b_chain *bc,result *res,bool isReversed);
+    JoinJob(bucket_hash small,bucket_hash large,b_chain *bc,result *res,bool isReversed);
     ~JoinJob();
     int Run();
 };

@@ -15,7 +15,7 @@ TEST_OBJ = $(TEST_SRC:$(TEST_SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 F_OBJ = $(filter-out obj/main.o,$(OBJ))
 DEPS = $(wildcard $(INC_DIR)/*.h*)
 
-CCFLAGS = -std=c++11 -g3 -pthread
+CCFLAGS = -std=c++11 -O3 -pthread
 
 .PHONY: clean
 .PHONY: directories

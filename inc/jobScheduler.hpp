@@ -3,7 +3,7 @@
 #include <queue>
 #include <pthread.h>
 
-#define NUM_THREADS 8
+#define NUM_THREADS 4
 
 typedef int JobID;
 
@@ -13,10 +13,10 @@ extern JobScheduler* jobScheduler;
 // Abstract Class Job
 class Job {
   public:
-    Job() = default;
+    Job() { static int _id = 0; id = _id++; };
+    int id;
     virtual ~Job() {}
 
-    // This method should be implemented by subclasses.
     virtual int Run() = 0;
 };
 
@@ -53,7 +53,7 @@ class JobScheduler {
 
     // Waits Until executed all jobs in the queue.
     void Barrier();
-    
+
     // Add a job in the queue and returns a JobId
     JobID Schedule(Job* job);
 

@@ -7,7 +7,6 @@
 #include "../inc/jobs.hpp"
 #include "../inc/utils.hpp"
 
-uint64_t PRIME_NUM;
 
 /**
  * pretty print a relation for debugging
@@ -22,16 +21,6 @@ void printRelation(relation * rel, char const * name){
   for(uint64_t i = 0; i < rel->num_tuples; i++)
     printf("* %5ld|%5ld\n", rel->tuples[i].key, rel->tuples[i].payload);
   std::cout << "* /Printing Relation " << name << std::endl << std::endl;
-}
-
-/**
- * H2 hash function
- *
- * @params num, hash this number
- * @returns hash value
- */
-inline uint64_t h2(int64_t num) {
-  return num % PRIME_NUM; //Later we are going to find the next prime from length
 }
 
 /**
@@ -50,8 +39,7 @@ array_int* createHistogram(relation * rel){
     high = (i == NUM_THREADS-1)? rel->num_tuples: (i+1) * chunk;
     hist[i].length = (1 << H1_LAST_BITS);
     hist[i].data = (int64_t*) calloc(sizeof(int64_t), hist[i].length);
-    Job* job = new HistogramJob(low, high, &hist[i], rel);
-    jobScheduler->Schedule(job);
+    jobScheduler->Schedule(new HistogramJob(low, high, &hist[i], rel));
   }
 
   jobScheduler->Barrier();
@@ -107,8 +95,7 @@ relation * createRelation(relation * rel, array_int* psum){
   for (int t = 0; t < NUM_THREADS; t++) {
     low = high;
     high = (t == NUM_THREADS-1)? rel->num_tuples: (t+1) * chunk;
-    Job* job = new PartitionJob(low, high, rel, new_rel, &psum[t]);
-    jobScheduler->Schedule(job);
+    jobScheduler->Schedule(new PartitionJob(low, high, rel, new_rel, &psum[t]));
   }
 
   jobScheduler->Barrier();
@@ -149,26 +136,29 @@ hash_table * reorderRelation(relation * rel){
  * @params isReversed, for printing the results in the order the 2 relations were given
  */
 void compareBuckets(bucket_hash *small,bucket_hash *large,b_chain *bc,result *res_list,bool isReversed) {
-  int64_t lg_value,h2_res,index;
+  int64_t lg_value, index;
   tuple_ res_tuple;
-
+  tuple_* s_tuples = small->ht->rel->tuples;
+  tuple_* l_tuples = large->ht->rel->tuples;
   int64_t sm_low=small->b->low;
+
   for(int64_t k=large->b->low; k<large->b->high; k++) {
-    lg_value = large->ht->rel->tuples[k].payload;
-    h2_res = h2(lg_value);
-    index = bc->Bucket[h2_res];
-    while(index!=-1) {
-      if(small->ht->rel->tuples[index+sm_low].payload==lg_value) {
+    lg_value = l_tuples[k].payload;
+    index = bc->Bucket[h2(lg_value, bc->b_size)];
+    int64_t last_index = 0; //DEBUG
+    while (index != -1) {
+      if(s_tuples[index+sm_low].payload == lg_value) {
         if(isReversed) {
-          res_tuple.key = large->ht->rel->tuples[k].key;
-          res_tuple.payload = small->ht->rel->tuples[index+sm_low].key;
+          res_tuple.key = l_tuples[k].key;
+          res_tuple.payload = s_tuples[index+sm_low].key;
         }
         else {
-          res_tuple.key = small->ht->rel->tuples[index+sm_low].key;
-          res_tuple.payload = large->ht->rel->tuples[k].key;
+          res_tuple.key = s_tuples[index+sm_low].key;
+          res_tuple.payload = l_tuples[k].key;
         }
         addToResult(res_list,&res_tuple);
       }
+      last_index = index;
       index = bc->Chain[index];
     }
   }
@@ -205,16 +195,16 @@ b_chain * indexingSmallBucket(bucket_hash *small) {
   uint64_t bucket_size = small->b->high - small->b->low;
 
   bc->Chain = new int64_t[bucket_size];
-  PRIME_NUM = findNextPrime(bucket_size);
-  bc->Bucket = new int64_t[PRIME_NUM];
+  bc->b_size = findNextPrime(bucket_size);
+  bc->Bucket = new int64_t[bc->b_size];
 
-  for(uint64_t i=0; i<PRIME_NUM; i++){
+  for(uint64_t i=0; i<bc->b_size; i++){
     bc->Bucket[i]=-1;
   }
 
   for(int64_t l=small->b->low; l<small->b->high; l++){
-    bc->Chain[l-small->b->low] = bc->Bucket[h2(small->ht->rel->tuples[l].payload)];
-    bc->Bucket[h2(small->ht->rel->tuples[l].payload)] = l - small->b->low;
+    bc->Chain[l-small->b->low] = bc->Bucket[h2(small->ht->rel->tuples[l].payload, bc->b_size)];
+    bc->Bucket[h2(small->ht->rel->tuples[l].payload, bc->b_size)] = l - small->b->low;
   }
 
   return bc;
@@ -237,36 +227,40 @@ result * radixHashJoin(relation * rel_R, relation * rel_S){
 
   // for each bucket
   for(uint64_t i=0; i<hash_table_R->psum.length; i++) {
-    bucket R_bucket,S_bucket;
+    bucket* R_bucket, *S_bucket;
     bucket_hash small,large;
     bool isReversed;
+    R_bucket = (bucket*) malloc(sizeof(bucket));
+    S_bucket = (bucket*) malloc(sizeof(bucket));
 
-    R_bucket.low=hash_table_R->psum.data[i];
-    S_bucket.low=hash_table_S->psum.data[i];
+    R_bucket->low=hash_table_R->psum.data[i];
+    S_bucket->low=hash_table_S->psum.data[i];
 
-    R_bucket.high = (i==hash_table_R->psum.length-1)? rel_R->num_tuples: hash_table_R->psum.data[i+1];
-    S_bucket.high = (i==hash_table_S->psum.length-1)? rel_S->num_tuples: hash_table_S->psum.data[i+1];
+    R_bucket->high = (i==hash_table_R->psum.length-1)? rel_R->num_tuples: hash_table_R->psum.data[i+1];
+    S_bucket->high = (i==hash_table_S->psum.length-1)? rel_S->num_tuples: hash_table_S->psum.data[i+1];
 
-    if(R_bucket.high-R_bucket.low <= S_bucket.high-S_bucket.low) {
-      small.b=&R_bucket;
+    if(R_bucket->high-R_bucket->low <= S_bucket->high-S_bucket->low) {
+      small.b=R_bucket;
       small.ht=hash_table_R;
 
-      large.b=&S_bucket;
+      large.b=S_bucket;
       large.ht=hash_table_S;
       isReversed=false;
     }
     else {
-      small.b=&S_bucket;
+      small.b=S_bucket;
       small.ht=hash_table_S;
 
-      large.b=&R_bucket;
+      large.b=R_bucket;
       large.ht=hash_table_R;
       isReversed=true;
     }
 
     initResult(&res_list[i]);
-    b_chain *bc=indexingSmallBucket(&small);
-    jobScheduler->Schedule(new JoinJob(&small, &large, bc, res_list[i], isReversed));
+    b_chain *bc = indexingSmallBucket(&small);
+
+    jobScheduler->Schedule(new JoinJob(small, large, bc, res_list[i], isReversed));
+    // jobScheduler->Barrier(); // DEBUG
   }
 
   jobScheduler->Barrier();
@@ -274,8 +268,8 @@ result * radixHashJoin(relation * rel_R, relation * rel_S){
   freeHashTableAndComponents(hash_table_R);
   freeHashTableAndComponents(hash_table_S);
 
-  squashResults(res_list, list_size);
-  result* res = res_list[0];
+  LOG("Squashing result list\n");
+  result* res = squashResults(res_list, list_size);
 
   free(res_list);
   return res;

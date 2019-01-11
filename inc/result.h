@@ -31,7 +31,7 @@ tuple_ * getNthResult(result *, uint64_t);
 tuple_ * getResult(result *);
 void initIterator(result *);
 void setIterator(result *, uint64_t);
-void squashResults(result** res_list, int list_size);
+result * squashResults(result** res_list, int list_size);
 void printResults(result *);
 
 void initBlock(block **);

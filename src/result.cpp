@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "../inc/radix.h"
 #include "../inc/result.h"
+#include "../inc/utils.hpp"
 
 
 /**
@@ -83,15 +84,15 @@ tuple_ * getNthResult(result * res, uint64_t n){
  *
  * @params res, the result struct
  */
-tuple_ * getResult(result * res){
+tuple_ * getResult(result * res) {
   tuple_* value = res->current_tuple;
-  if (res->current_tuple_num < res->num_tuples) {
+  if (res->current_tuple_num < res->num_tuples && value) {
     res->current_tuple_num += 1;
     res->current_tuple_index += 1;
-    // int32_t index_tuple = res->current_tuple_num % RESULT_BLOCK_MAX_TUPLES;
+    // LOG("\tReturning %lu/%lu tuple from block %lu/%lu -->(%lu,%lu)\n", res->current_tuple_num, res->num_tuples, res->current_tuple_index, res->current_block->num_tuples, value->key, value->payload);
     if (res->current_tuple_index == res->current_block->num_tuples) {
       res->current_block = res->current_block->next;
-      res->current_tuple = res->current_block->tuples;
+      res->current_tuple = res->current_block ? res->current_block->tuples: NULL;
       res->current_tuple_index = 0;
     }
     else {
@@ -100,7 +101,6 @@ tuple_ * getResult(result * res){
   } else {
     return NULL;
   }
-
   return value;
 }
 
@@ -143,15 +143,21 @@ void setIterator(result* res, uint64_t n){
  * @params res_list, list of results
  * @params list_size, size of list
  */
-void squashResults(result** res_list, int list_size) {
-  result* res = res_list[0];
+result * squashResults(result** res_list, int list_size) {
+  result* res;
+  int i = 0;
 
-  for(int i = 1; i < list_size; i++) {
+  while (i < list_size && ((res = res_list[i++]) == NULL || !res->num_tuples));
+
+  for(; i < list_size; i++) {
+    if(res_list[i]->head == NULL || !res_list[i]->head->num_tuples)
+      continue;
     res->num_tuples += res_list[i]->num_tuples;
     res->num_blocks += res_list[i]->num_blocks;
     res->last->next = res_list[i]->head;
     res->last = res_list[i]->last;
   }
+  return res;
 }
 
 /**

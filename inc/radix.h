@@ -3,8 +3,9 @@
 #include <stdint.h>
 
 // 1st hash function
-#define H1_LAST_BITS 8
+#define H1_LAST_BITS 6
 #define h1(X) (X & ((1 << H1_LAST_BITS) - 1))
+#define h2(N, M) (N % M)
 
 typedef struct tuple_ tuple_;
 typedef struct relation relation;
@@ -44,6 +45,7 @@ struct bucket{
 struct b_chain {
   int64_t *Bucket;
   int64_t *Chain;
+  int64_t b_size;
 };
 
 struct bucket_hash {
@@ -58,8 +60,7 @@ result * radixHashJoin(relation * rel_R, relation * rel_S);
 void compareBuckets(bucket_hash *sm,bucket_hash *lg,b_chain *bc,result *res_list,bool isReversed);
 b_chain * indexingSmallBucket(bucket_hash *small);
 bool isPrime(uint64_t n);
-inline uint64_t findNextPrime(uint64_t n);
-inline uint64_t h2(int64_t num);
+uint64_t findNextPrime(uint64_t n);
 hash_table * reorderRelation(relation * rel);
 relation * createRelation(relation * rel, array_int psum_original);
 array_int * createPsum(array_int * hist);
