@@ -4,10 +4,9 @@
 #include <unistd.h>
 #include "../inc/database.hpp"
 #include "../inc/intermediate.hpp"
-#include "../inc/relation.hpp"
-#include "../inc/query.hpp"
 #include "../inc/utils.hpp"
 #include "../inc/result.h"
+#include "../inc/cardinality.hpp"
 
 using namespace std;
 
@@ -68,8 +67,23 @@ string Database::run(const Query& query){
   IntermediateList intermediateList = IntermediateList(query);
 
   // Cardinality Assessment
-  Cardinality car = Cardinality(query);
+  Cardinality car(&query);
+
+
+  vector<vector<Stats>> old_stats = car.getStats();
   car.mainAssess();
+  vector<vector<Stats>> stats = car.getStats();
+
+  for(int i = 0; i < stats.size(); i++){
+  cout << "Relation "<<i<<endl<<endl;
+    for(int j = 0; j < stats[i].size(); j++){
+      cout<<"old l = "<<old_stats[i][j].getl()<<" \t\tnew l = "<<stats[i][j].getl()<<endl;
+      cout<<"old u = "<<old_stats[i][j].getu()<<" \t\tnew u = "<<stats[i][j].getu()<<endl;
+      cout<<"old f = "<<old_stats[i][j].getf()<<" \t\tnew f = "<<stats[i][j].getf()<<endl;
+      cout<<"old d = "<<old_stats[i][j].getd()<<" \t\tnew d = "<<stats[i][j].getd()<<endl<<endl;
+    }
+    cout << "\n";
+  }
 
   //  run filters
   const Filter* filter;

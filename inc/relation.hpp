@@ -14,7 +14,7 @@ class Relation{
   void* memblock;
   size_t memsize;
   std::vector<void *> cols;
-  std::vector<Stats *> stats;
+  std::vector<Stats> stats;
 
   public:
     Relation(std::string fileName);
@@ -35,7 +35,7 @@ class Relation{
     // build relation of [rowId,value] tuples
     relation* buildRelation(int col);
     // get Statistic vaulues of a relation
-    std::vector<Stats *>* getStats();
+    std::vector<Stats> getStats();
     // destructor
     ~Relation();
 };

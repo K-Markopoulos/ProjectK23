@@ -72,7 +72,7 @@ void Relation::loadRelation(){
     LOG("\tAdding col starting with %lu\n", *(uint64_t*)addr);
     this->cols.push_back((void*)addr);
     //STATS
-    this->stats.emplace_back(new Stats(this, col));
+    this->stats.push_back(Stats(this, col));
     addr += sizeof(uint64_t) * num_tuples;
   }
 
@@ -156,10 +156,6 @@ relation* Relation::buildRelation(int col){
   return res;
 }
 
-std::vector<Stats *>* Relation::getStats(){
-  return &stats;
-}
-
-std::vector<Stats *> Relation::copyStatsVector(){
+std::vector<Stats> Relation::getStats(){
   return stats;
 }

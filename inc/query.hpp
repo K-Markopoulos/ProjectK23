@@ -38,6 +38,10 @@ class Query{
     const Filter* getFilter(const int i) const;
     // get Selector
     const Selector* getSelector(const int i) const;
+    // get number of predicates
+    uint64_t getPredicateCount() const;
+    // get number of filters
+    uint64_t getFilterCount() const;
     // clear query
     void clear();
 };

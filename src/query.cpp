@@ -279,3 +279,11 @@ Selector::Selector(string selector, Query* query){
   this->col = stoi(selector.substr(pos_dot+1));
   this->relation = query->getRelation(relId);
 }
+
+uint64_t Query::getPredicateCount() const{
+  return predicates.size();
+}
+
+uint64_t Query::getFilterCount() const{
+  return filters.size();
+}

@@ -72,7 +72,7 @@ test_relation: $(F_OBJ) ./obj/testRelation.o
 	# (disable LOG for test to work)
 	#
 
-test_stats: $(T_OBJ) ./obj/testStats.o
+test_stats: $(F_OBJ) ./obj/testStats.o
 	$(CC) -o $@ $^ $(CCFLAGS)
 	#
 	# OK! now try echo -e '\n' | cat ./workloads/small/small.init - ./workloads/small/small.work | ./test_parsing

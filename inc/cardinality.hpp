@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../inc/stats.hpp"
+#include "../inc/query.hpp"
 
 using namespace std;
 
@@ -9,19 +9,12 @@ class Cardinality{
   vector<vector<Stats>> stats;
 
 public:
-  Cardinality(Query*);
-  // Get stats vector
-  vector<vector<Stats>>& getStatsVector();
-  // Get Relation stats
-  vector<Stats>& getRelStats(uint64_t);
-  // Get Column stats
-  Stats& getStats(uint64_t, uint64_t);
-  // Get existing Relations
-  vector<uint64_t> getRelations();
+  Cardinality(const Query*);
+  // admninistrator function for cardinality assessent
+  void mainAssess();
   // assess cardinality using overloading
-  // DUMMY ARGUEMENTS
-  void assess(Filter*);
-  void assess(1);
-  void assess(2);
-  void assess(3);
-}
+  void assess(const Predicate*);
+  void assess(const Filter*);
+  // get stats vector
+  vector<vector<Stats>> getStats();
+};

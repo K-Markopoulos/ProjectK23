@@ -92,7 +92,3 @@ void Stats::setf(uint64_t v){
 void Stats::setd(uint64_t v){
   this->d = v;
 }
-
-Stats Stats::copyStats(){
-  return *this;
-}
