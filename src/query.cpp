@@ -304,5 +304,5 @@ void Query::setBestSequence() {
     }
   } while (std::next_permutation(predicates_.begin(), predicates_.end()));
 
-  // predicates = bestSequence;
+  predicates = bestSequence;
 }
