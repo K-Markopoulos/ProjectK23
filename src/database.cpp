@@ -61,29 +61,16 @@ size_t Database::getRelationsCount(){
  * @params query
  * @returns char*, result from query
  */
-string Database::run(const Query& query){
+string Database::run(Query& query){
   //  initialize Intermmediate results
+  #ifdef LOGGER
+  #undef LOGGER
+  #define LOGGER "RUN"
+  #endif
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
 
-  // Cardinality Assessment
-  Cardinality car(&query);
-
-
-  vector<vector<Stats>> old_stats = car.getStats();
-  car.mainAssess();
-  vector<vector<Stats>> stats = car.getStats();
-
-  for(int i = 0; i < stats.size(); i++){
-  cout << "Relation "<<i<<endl<<endl;
-    for(int j = 0; j < stats[i].size(); j++){
-      cout<<"old l = "<<old_stats[i][j].getl()<<" \t\tnew l = "<<stats[i][j].getl()<<endl;
-      cout<<"old u = "<<old_stats[i][j].getu()<<" \t\tnew u = "<<stats[i][j].getu()<<endl;
-      cout<<"old f = "<<old_stats[i][j].getf()<<" \t\tnew f = "<<stats[i][j].getf()<<endl;
-      cout<<"old d = "<<old_stats[i][j].getd()<<" \t\tnew d = "<<stats[i][j].getd()<<endl<<endl;
-    }
-    cout << "\n";
-  }
+  query.setBestSequence();
 
   //  run filters
   const Filter* filter;
@@ -92,6 +79,7 @@ string Database::run(const Query& query){
     runFilter(filter, intermediateList);
     delete filter;
   }
+
 
   //  run predicates
   const Predicate* predicate;
@@ -112,11 +100,6 @@ string Database::run(const Query& query){
   }
 
   return response;
-
-  // LOG("DONE! ----------- SHOWING INTERMEDIATES -----------\n");
-  // for(int i = 0; i < intermediateList.getIntermediateCount(); i++){
-  //   intermediateList.getIntermediate(i)->print();
-  // }
 }
 
 /** -----------------------------------------------------

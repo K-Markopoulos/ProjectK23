@@ -4,16 +4,14 @@
 using namespace std;
 
 class Cardinality{
-  const Query* query;
   vector<uint64_t> relations;
   vector<vector<Stats>> stats;
 
 public:
   Cardinality(const Query*);
-  // admninistrator function for cardinality assessent
-  void mainAssess();
   // assess cardinality using overloading
-  void assess(const Predicate*);
+  uint64_t assess(const Predicate*);
+  //
   void assess(const Filter*);
   // get stats vector
   vector<vector<Stats>> getStats();

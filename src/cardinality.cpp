@@ -5,20 +5,11 @@
 #include "../inc/query.hpp"
 
 Cardinality::Cardinality(const Query* q){
-  this->query = q;
   for (int r = 0; r < q->getRelationsCount(); r++) {
     Relation* rel = q->getRelation(r);
     relations.push_back(rel->getId());
     stats.push_back(rel->getStats());
   }
-}
-
-void Cardinality::mainAssess(){
-  for(uint64_t i=0; i<query->getFilterCount(); i++){
-    assess(query->getFilter(i));
-  }
-  for(uint64_t i=0; i<query->getPredicateCount(); i++)
-    assess(query->getPredicate(i));
 }
 
 void Cardinality::assess(const Filter* f){
@@ -32,7 +23,7 @@ void Cardinality::assess(const Filter* f){
     curr_stats->setu(f->value);
     if(f->value >= curr_stats->getl() && f->value <= curr_stats->getu()){
       curr_stats->setd(1);
-      curr_stats->setf(f_old / d_old);
+      curr_stats->setf(d_old ? f_old / d_old : 0);
     }
     else{
       curr_stats->setd(0);
@@ -48,14 +39,14 @@ void Cardinality::assess(const Filter* f){
 
     curr_stats->setl(k1);
     curr_stats->setu(k2);
-    curr_stats->setd(d_old * (k2 - k1) / (u_old - l_old));
-    curr_stats->setf(f_old * (k2 - k1) / (u_old - l_old));
+    curr_stats->setd((u_old - l_old)? d_old * (k2 - k1) / (u_old - l_old): 0);
+    curr_stats->setf((u_old - l_old)? f_old * (k2 - k1) / (u_old - l_old): 0);
   }
   // Rest Columns
   for(uint64_t i=0; i<stats[f->relId].size(); i++){
     if(i != f->col){
       Stats* s = &stats[f->relId][i];
-      if(s->getd() == 0)
+      if(s->getd() == 0 || f_old == 0)
         s->setd(0);
       else
         s->setd(s->getd() * (1 - pow(1 - curr_stats->getf() / f_old, s->getf() / s->getd())));
@@ -64,7 +55,7 @@ void Cardinality::assess(const Filter* f){
   }
 }
 
-void Cardinality::assess(const Predicate* p){
+uint64_t Cardinality::assess(const Predicate* p){
   uint64_t la_old, ua_old, fa_old, da_old;
   uint64_t lb_old, ub_old, fb_old, db_old;;
 
@@ -153,6 +144,7 @@ void Cardinality::assess(const Predicate* p){
       }
     }
   }
+  return curr_stats1->getf();
 }
 
 vector<vector<Stats>> Cardinality::getStats(){
