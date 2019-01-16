@@ -79,8 +79,8 @@ JoinJob::~JoinJob() {
   delete[] bc->Chain;
   delete[] bc->Bucket;
   delete bc;
-  delete small.b;
-  delete large.b;
+  free(small.b);
+  free(large.b);
 }
 
 /**
@@ -98,7 +98,6 @@ int JoinJob::Run() {
     for(int64_t k=large.b->low; k<large.b->high; k++) {
       lg_value = l_tuples[k].payload;
       index = bc->Bucket[h2(lg_value, bc->b_size)];
-      int64_t last_index = 0; //DEBUG
       while (index != -1) {
         if(s_tuples[index+sm_low].payload == lg_value) {
           res_tuple.key = l_tuples[k].key;
@@ -106,7 +105,6 @@ int JoinJob::Run() {
 
           addToResult(res, &res_tuple);
         }
-        last_index = index;
         index = bc->Chain[index];
       }
     }
@@ -114,7 +112,6 @@ int JoinJob::Run() {
     for(int64_t k=large.b->low; k<large.b->high; k++) {
       lg_value = l_tuples[k].payload;
       index = bc->Bucket[h2(lg_value, bc->b_size)];
-      int64_t last_index = 0; //DEBUG
       while (index != -1) {
         if(s_tuples[index+sm_low].payload == lg_value) {
           res_tuple.key = s_tuples[index+sm_low].key;
@@ -122,7 +119,6 @@ int JoinJob::Run() {
 
           addToResult(res, &res_tuple);
         }
-        last_index = index;
         index = bc->Chain[index];
       }
     }

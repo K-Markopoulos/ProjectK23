@@ -147,15 +147,20 @@ result * squashResults(result** res_list, int list_size) {
   result* res;
   int i = 0;
 
-  while (i < list_size && ((res = res_list[i++]) == NULL || !res->num_tuples));
+  while (i < list_size && ((res = res_list[i++]) == NULL || !res->num_tuples)) {
+    if(res && i < list_size) destroyResult(res);
+  }
 
   for(; i < list_size; i++) {
-    if(res_list[i]->head == NULL || !res_list[i]->head->num_tuples)
+    if(res_list[i]->head == NULL || !res_list[i]->head->num_tuples) {
+      destroyResult(res_list[i]);
       continue;
+    }
     res->num_tuples += res_list[i]->num_tuples;
     res->num_blocks += res_list[i]->num_blocks;
     res->last->next = res_list[i]->head;
     res->last = res_list[i]->last;
+    free(res_list[i]);
   }
   return res;
 }
