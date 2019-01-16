@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <time.h>
 #include <unistd.h>
 #include "../inc/database.hpp"
 #include "../inc/intermediate.hpp"
@@ -123,6 +124,7 @@ inline bool op(char op, uint64_t v1, uint64_t v2){
  */
 void Database::runFilter(const Filter* filter, IntermediateList& results){
   LOG("\tRunning filter ..%c%ld\n",filter->op, filter->value);
+  clock_t start = clock();
 
   Intermediate* intermediate = results.getIntermediateByRel(filter->relId);
   if(intermediate){
@@ -193,6 +195,7 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
     intermediate->updateColumn(filter->relId, &new_column);
   }
 
+  elapsed.filters += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 /** -----------------------------------------------------
@@ -203,6 +206,8 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
  */
 void Database::runPredicate(const Predicate* predicate, IntermediateList& results){
   LOG("Running predicate %lu.%lu%c%lu.%lu\n", predicate->relId1, predicate->col1, predicate->op, predicate->relId2, predicate->col2);
+  clock_t start = clock();
+
   if (predicate->relId1 == predicate->relId2){
     LOG("\tIts a self join\n");
     //self join
@@ -270,10 +275,12 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
     }
     destroyResult(res);
   }
+  elapsed.predicates += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 string Database::runSelector(const Selector* selector, IntermediateList& results){
   LOG("Running selector %lu.%lu\n", selector->relId, selector->col);
+  clock_t start = clock();
 
   Intermediate* intermediate = results.getIntermediateByRel(selector->relId);
   uint64_t sum = 0;
@@ -291,5 +298,6 @@ string Database::runSelector(const Selector* selector, IntermediateList& results
       sum += selector->relation->getTuple(selector->col, t);
   }
   LOG("\t>sum:%lu\n", sum);
+  elapsed.selectors += (double)(clock() - start) / CLOCKS_PER_SEC;
   return to_string(sum);
 }

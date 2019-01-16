@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 #include "../inc/radix.h"
 #include "../inc/result.h"
 #include "../inc/jobScheduler.hpp"
@@ -221,6 +222,8 @@ b_chain * indexingSmallBucket(bucket_hash *small) {
  * @returns result list
  */
 result * radixHashJoin(relation * rel_R, relation * rel_S){
+  clock_t start = clock();
+
   hash_table * hash_table_R = reorderRelation(rel_R);
   hash_table * hash_table_S = reorderRelation(rel_S);
 
@@ -274,6 +277,8 @@ result * radixHashJoin(relation * rel_R, relation * rel_S){
   result* res = squashResults(res_list, list_size);
 
   free(res_list);
+
+  elapsed.radix += (double)(clock() - start) / CLOCKS_PER_SEC;
   return res;
 }
 

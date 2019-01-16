@@ -3,6 +3,7 @@
 #include <vector>
 #include <unistd.h>
 #include <assert.h>
+#include <time.h>
 #include "../inc/database.hpp"
 #include "../inc/intermediate.hpp"
 #include "../inc/relation.hpp"
@@ -112,6 +113,8 @@ std::vector<uint64_t>* Intermediate::getColumn(int id){
 void Intermediate::update(int col, std::vector<uint64_t>* new_column){
   LOG("\t\t^Updating intermediate %d based on column %d\n", _id, col);
   LOG("\t\tmatching %lu rows\n", new_column->size());
+  clock_t start = clock();
+
   assert(col < rowIds.size());
   assert(loaded[col]);
 
@@ -135,7 +138,7 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
   }
 
   LOG("\t\t^Updated\n");
-  print();
+  elapsed.intermediate_update += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 /** ----------------------------------------------------- TODOOOOOOOOOO
@@ -147,6 +150,8 @@ void Intermediate::update(int col, std::vector<uint64_t>* new_column){
 void Intermediate::update(int col1, int col2, result* results){
   LOG("\t\t^Updating intermediate %d based on columns %d,%d and struct result\n", _id, col1, col2);
   LOG("\t\tmatching %lu rows\n", results->num_tuples);
+  clock_t start = clock();
+
   assert(col1 < rowIds.size());
   assert(col2 < rowIds.size());
 
@@ -163,6 +168,8 @@ void Intermediate::update(int col1, int col2, result* results){
   if (!loaded[col1] && !loaded[col2]){
     tuple_* tuple;
     initIterator(results);
+    rowIds[col1].reserve(results->num_tuples);
+    rowIds[col2].reserve(results->num_tuples);
     while(tuple=getResult(results)){
       rowIds[col1].push_back(tuple->key);
       rowIds[col2].push_back(tuple->payload);
@@ -189,7 +196,7 @@ void Intermediate::update(int col1, int col2, result* results){
   loaded[col1] = true;
   loaded[col2] = true;
   LOG("\t\t^Updated %lu rows\n", rowIds[col2].size());
-  print();
+  elapsed.intermediate_update += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 /** -----------------------------------------------------
@@ -201,12 +208,13 @@ void Intermediate::update(int col1, int col2, result* results){
 void Intermediate::updateColumn(int col, std::vector<uint64_t>* new_column){
   LOG("\t\t^Updating intermediate %d column %d\n", _id, col);
   LOG("\t\tmatching %lu rows\n", new_column->size());
+  clock_t start = clock();
   assert(col < rowIds.size());
   loaded[col] = true;
   if(new_column->size())
     rowIds[col] = *new_column;
   LOG("\t\t^Updated\n");
-  print();
+  elapsed.intermediate_update += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 /** -----------------------------------------------------
@@ -217,6 +225,7 @@ void Intermediate::updateColumn(int col, std::vector<uint64_t>* new_column){
  */
 void Intermediate::join(int relId1, int col1, Relation* relation1, int relId2, int col2, Relation* relation2){
   LOG("\t\t>< Joining intermediate %d columns %d-%d\n", _id, col1, col2);
+  clock_t start = clock();
   assert(col1 < rowIds.size());
   assert(col2 < rowIds.size());
 
@@ -233,6 +242,7 @@ void Intermediate::join(int relId1, int col1, Relation* relation1, int relId2, i
   rowIds = new_rowIds;
 
 LOG("\t\t^Updated %lu rows\n", rowIds[col1].size());
+elapsed.intermediate_update += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 /** -----------------------------------------------------
@@ -254,6 +264,8 @@ bool Intermediate::isLoaded(int id){
  */
 relation* Intermediate::buildRelation(Relation* rel, int id, int col){
   LOG("\t\tbuilding relation %d(%lu) from intermediate %d\n", id, rel->getId(), _id);
+  clock_t start = clock();
+
   assert(id < rowIds.size());
   assert(isLoaded(id));
 
@@ -265,6 +277,7 @@ relation* Intermediate::buildRelation(Relation* rel, int id, int col){
     res->tuples[i].payload = rel->getTuple(col, rowIds[id][i]);
   }
   LOG("\t\tbuilt relation with size: %lu\n", res->num_tuples);
+  elapsed.intermediate_build += (double)(clock() - start) / CLOCKS_PER_SEC;
   return res;
 }
 
