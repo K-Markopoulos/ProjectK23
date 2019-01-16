@@ -125,6 +125,8 @@ hash_table * reorderRelation(relation * rel){
     free(hist[t].data);
     free(psum[t].data);
   }
+  free(psum);
+  free(hist);
   return result;
 }
 

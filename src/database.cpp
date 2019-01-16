@@ -94,11 +94,6 @@ string Database::run(const Query& query){
   }
 
   return response;
-
-  // LOG("DONE! ----------- SHOWING INTERMEDIATES -----------\n");
-  // for(int i = 0; i < intermediateList.getIntermediateCount(); i++){
-  //   intermediateList.getIntermediate(i)->print();
-  // }
 }
 
 /** -----------------------------------------------------
