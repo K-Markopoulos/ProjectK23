@@ -10,8 +10,6 @@ class Cardinality{
 
 public:
   Cardinality(const Query*);
-  // admninistrator function for cardinality assessent
-  void mainAssess();
   // assess cardinality using overloading
   void assess(const Predicate*);
   void assess(const Filter*);

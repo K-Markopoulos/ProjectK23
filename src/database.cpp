@@ -66,24 +66,7 @@ string Database::run(const Query& query){
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
 
-  // Cardinality Assessment
-  Cardinality car(&query);
-
-
-  vector<vector<Stats>> old_stats = car.getStats();
-  car.mainAssess();
-  vector<vector<Stats>> stats = car.getStats();
-
-  for(int i = 0; i < stats.size(); i++){
-  cout << "Relation "<<i<<endl<<endl;
-    for(int j = 0; j < stats[i].size(); j++){
-      cout<<"old l = "<<old_stats[i][j].getl()<<" \t\tnew l = "<<stats[i][j].getl()<<endl;
-      cout<<"old u = "<<old_stats[i][j].getu()<<" \t\tnew u = "<<stats[i][j].getu()<<endl;
-      cout<<"old f = "<<old_stats[i][j].getf()<<" \t\tnew f = "<<stats[i][j].getf()<<endl;
-      cout<<"old d = "<<old_stats[i][j].getd()<<" \t\tnew d = "<<stats[i][j].getd()<<endl<<endl;
-    }
-    cout << "\n";
-  }
+  std::vector<uint64_t> rel_sequence = query.joinEnumeration();
 
   //  run filters
   const Filter* filter;
@@ -93,12 +76,19 @@ string Database::run(const Query& query){
     delete filter;
   }
 
-  //  run predicates
-  const Predicate* predicate;
-  int pCount = 0;
-  while(predicate = query.getPredicate(pCount++)){
-    runPredicate(predicate, intermediateList);
-    delete predicate;
+  //  calculate predicate execution order
+  std::vector<uint64_t> pred_sequence;
+  for(uint64_t j=0; j<rel_sequence.size()-1; j++){
+    for(uint64_t i=0; i<query.getPredicateCount(); i++){
+      Predicate * predicate = query.getPredicate(i);
+      if(rel_sequence[j] == p->relId1 && rel_sequence[j+1] == p->relId2 || rel_sequence[j] == p->relId2 && rel_sequence[j+1] == p->relId1)
+        pred_sequence.push_back(i);
+    }
+  }
+
+  // run predicates
+  for(uint64_t i = 0; i < query.getPredicateCount(); i++){
+    runPredicate(query.getPredicate(i), intermediateList);
   }
 
   string response;

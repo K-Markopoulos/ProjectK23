@@ -42,6 +42,10 @@ class Query{
     uint64_t getPredicateCount() const;
     // get number of filters
     uint64_t getFilterCount() const;
+    // Join Enumeration function
+    void joinEnumeration();
+    // Cost functions
+    uint64_t cost();
     // clear query
     void clear();
 };
