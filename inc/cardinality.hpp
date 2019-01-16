@@ -11,7 +11,7 @@ class Cardinality{
 public:
   Cardinality(const Query*);
   // assess cardinality using overloading
-  void assess(const Predicate*);
+  uint64_t assess(const Predicate*);
   void assess(const Filter*);
   // get stats vector
   vector<vector<Stats>> getStats();

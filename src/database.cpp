@@ -61,7 +61,7 @@ size_t Database::getRelationsCount(){
  * @params query
  * @returns char*, result from query
  */
-string Database::run(const Query& query){
+string Database::run(Query& query){
   //  initialize Intermmediate results
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
@@ -80,7 +80,7 @@ string Database::run(const Query& query){
   std::vector<uint64_t> pred_sequence;
   for(uint64_t j=0; j<rel_sequence.size()-1; j++){
     for(uint64_t i=0; i<query.getPredicateCount(); i++){
-      Predicate * predicate = query.getPredicate(i);
+      const Predicate * p = query.getPredicate(i);
       if(rel_sequence[j] == p->relId1 && rel_sequence[j+1] == p->relId2 || rel_sequence[j] == p->relId2 && rel_sequence[j+1] == p->relId1)
         pred_sequence.push_back(i);
     }
