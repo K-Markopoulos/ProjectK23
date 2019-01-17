@@ -1,10 +1,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <time.h>
 #include <stdbool.h>
 #include "../inc/database.hpp"
 #include "../inc/query.hpp"
 #include "../inc/utils.hpp"
+#include "../inc/cardinality.hpp"
 
 
 /** -----------------------------------------------------
@@ -209,21 +212,11 @@ const Selector* Query::getSelector(const int index) const{
  *
  */
 void Query::clear(){
-  LOG("Starting clear\n");
+  LOG("Cleaning query\n");
   this->relations.clear();
-  LOG("Cleared vector relations\n");
-  // for(Predicate* pred: predicates)
-  //   delete pred;
-  LOG("Cleared predicates\n");
   this->predicates.clear();
-  LOG("Cleared vector predicates\n");
-  // for(Filter* filter: filters)
-  //   delete filter;
   this->filters.clear();
-  // for(Selector* sel: selectors)
-  //   delete sel;
   this->selectors.clear();
-  LOG("Ending clear\n");
   return;
 }
 
@@ -278,4 +271,41 @@ Selector::Selector(string selector, Query* query){
   relId = stoi(selector.substr(0, pos_dot));
   this->col = stoi(selector.substr(pos_dot+1));
   this->relation = query->getRelation(relId);
+}
+
+uint64_t Query::getPredicateCount() const{
+  return predicates.size();
+}
+
+uint64_t Query::getFilterCount() const{
+  return filters.size();
+}
+
+
+void Query::setBestSequence() {
+  clock_t start = clock();
+  Cardinality originalCardinality = Cardinality(this);
+
+  vector<Predicate*> predicates_ = predicates;
+  vector<Predicate*> bestSequence;
+  int64_t max = -1, cost = 0;
+
+  for (Filter* f : filters) {
+    originalCardinality.assess(f);
+  }
+
+  do {
+    Cardinality cardinality = originalCardinality;
+    cost = 0;
+    for (Predicate* pred : predicates_) {
+      cost += cardinality.assess(pred);
+    }
+    if (max == -1 || cost < max) {
+      max = cost;
+      bestSequence = predicates_;
+    }
+  } while (std::next_permutation(predicates_.begin(), predicates_.end()));
+
+  predicates = bestSequence;
+  elapsed.optimizer += (double)(clock() - start) / CLOCKS_PER_SEC;
 }

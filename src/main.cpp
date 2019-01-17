@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
   jobScheduler = new JobScheduler();
   jobScheduler->Init(NUM_THREADS);
   string line;
-  elapsed = {0,0,0,0,0,0,0,0};
+  elapsed = {0,0,0,0,0,0,0,0,0};
 
   clock_t start = clock();
 
@@ -58,13 +58,14 @@ int main(int argc, char* argv[]) {
     printf("Total times:\n \
       -Loading:   \t%f\n \
       -Running:   \t%f\n \
+      --Optimizer: \t%f\n \
       --Radix:     \t%f\n \
       --Filters:   \t%f\n \
       --Predicates:\t%f\n \
       --Selectors: \t%f\n \
       --I. build:  \t%f\n \
       --I. update: \t%f\n",
-      elapsed.loading, elapsed.running, elapsed.radix, elapsed.filters, elapsed.predicates,
+      elapsed.loading, elapsed.running, elapsed.optimizer, elapsed.radix, elapsed.filters, elapsed.predicates,
       elapsed.selectors, elapsed.intermediate_build, elapsed.intermediate_update);
   }
   return 0;

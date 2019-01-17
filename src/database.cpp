@@ -5,10 +5,9 @@
 #include <unistd.h>
 #include "../inc/database.hpp"
 #include "../inc/intermediate.hpp"
-#include "../inc/relation.hpp"
-#include "../inc/query.hpp"
 #include "../inc/utils.hpp"
 #include "../inc/result.h"
+#include "../inc/cardinality.hpp"
 
 using namespace std;
 
@@ -63,10 +62,11 @@ size_t Database::getRelationsCount(){
  * @params query
  * @returns char*, result from query
  */
-string Database::run(const Query& query){
-  //  initialize Intermmediate results
+string Database::run(Query& query){
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
+
+  query.setBestSequence();
 
   //  run filters
   const Filter* filter;
@@ -219,7 +219,6 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       for(uint64_t t = 0; t < column->size(); t++)
           if(predicate->relation1->getTuple(predicate->col1, (*column)[t]) ==
           predicate->relation2->getTuple(predicate->col2, (*column)[t])){
-            //LOG("\tmatching row %lu\n", (*column)[t]);
             new_column.push_back((*column)[t]);
           }
       intermediate->update(predicate->relId1, &new_column);
@@ -230,7 +229,6 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       for(uint64_t t = 0; t < predicate->relation1->getTupleCount(); t++)
           if(predicate->relation1->getTuple(predicate->col1, t) ==
           predicate->relation2->getTuple(predicate->col2, t)){
-            //LOG("\tmatching row %lu\n", t);
             new_column.push_back(t);
           }
       intermediate->updateColumn(predicate->relId1, &new_column);
@@ -269,9 +267,8 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
     } else if (!intermediate1 && intermediate2) {
       intermediate2->update(predicate->relId1, predicate->relId2, res);
     } else {
-      LOG("\t\tfound both intermediate1 and intermediate2, updating both (should I?)\n");
-      intermediate1->update(predicate->relId1, predicate->relId2, res);
-      // intermediate2->update(predicate->relId1, predicate->relId2, res);
+      LOG("\t\tfound both intermediate1 and intermediate2, merging (should I?)\n");
+      results.merge(intermediate1, intermediate2, predicate->relId1, predicate->relId2, res);
     }
     destroyResult(res);
   }

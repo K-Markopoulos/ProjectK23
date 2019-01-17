@@ -14,9 +14,9 @@
 // #define PRINT_IR
 // #define SKIP_DATA
 // #define DEBUG
-#ifdef DEBUG
 #define LOGGER "DEBUG"
-#define LOG(...) fprintf(stdout,"[%s]: ", LOGGER); fprintf( stdout, __VA_ARGS__ );
+#ifdef DEBUG
+#define LOG(...) fprintf(stdout,"[%s]: ",LOGGER); fprintf( stdout, __VA_ARGS__ );
 #else
 #define LOG(...) do{ } while ( 0 )
 #endif
@@ -32,6 +32,7 @@ typedef struct elapsed_timer{
   double selectors;
   double intermediate_build;
   double intermediate_update;
+  double optimizer;
 }elapsed_timer;
 
 extern elapsed_timer elapsed;

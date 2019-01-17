@@ -77,4 +77,9 @@ test_threads: ./obj/testThreads.o ./obj/jobScheduler.o
 	$(CC) -o $@ $^ $(CCFLAGS)
 	#
 	# OK! now try ./test_threads [Threads] [Jobs]
+
+test_stats: $(F_OBJ) ./obj/testStats.o
+	$(CC) -o $@ $^ $(CCFLAGS)
+	#
+	# OK! now try echo -e '\n' | cat ./workloads/small/small.init - ./workloads/small/small.work | ./test_parsing
 	#
