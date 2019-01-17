@@ -5,10 +5,12 @@
 #include <stdbool.h>
 #include "../inc/relation.hpp"
 
+
 class Query;
 class Predicate;
 class Filter;
 class Selector;
+class Cardinality;
 
 class Query{
   std::vector<Relation*> relations;
@@ -44,6 +46,12 @@ class Query{
     uint64_t getPredicateCount() const;
     // get number of filters
     uint64_t getFilterCount() const;
+    // Join Enumeration function
+    std::vector<uint64_t> joinEnumeration();
+
+    std::vector<uint64_t> createJoinTree(std::vector<uint64_t>, std::vector<uint64_t>,Cardinality);
+    // Cost functions
+    uint64_t cost(std::vector<uint64_t>,Cardinality);
     // clear query
     void clear();
 };

@@ -63,10 +63,14 @@ size_t Database::getRelationsCount(){
  * @returns char*, result from query
  */
 string Database::run(Query& query){
+  //  initialize Intermmediate results
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
 
-  query.setBestSequence();
+  std::vector<uint64_t> rel_sequence = query.joinEnumeration();
+
+  // for(uint64_t i : rel_sequence)
+  //    std::cout<<"rel_sequence: "<< i << std::endl;
 
   //  run filters
   const Filter* filter;
@@ -76,12 +80,20 @@ string Database::run(Query& query){
     delete filter;
   }
 
-  //  run predicates
-  const Predicate* predicate;
-  int pCount = 0;
-  while(predicate = query.getPredicate(pCount++)){
-    runPredicate(predicate, intermediateList);
-    delete predicate;
+  //  calculate predicate execution order
+  std::vector<uint64_t> pred_sequence;
+
+  for(uint64_t j=0; j<rel_sequence.size()-1; j++){
+    for(uint64_t i=0; i<query.getPredicateCount(); i++){
+      const Predicate * p = query.getPredicate(i);
+      if(rel_sequence[j] == p->relId1 && rel_sequence[j+1] == p->relId2 || rel_sequence[j] == p->relId2 && rel_sequence[j+1] == p->relId1)
+        pred_sequence.push_back(i);
+    }
+  }
+
+  // run predicates
+  for(uint64_t i : pred_sequence){
+    runPredicate(query.getPredicate(i), intermediateList);
   }
 
   string response;

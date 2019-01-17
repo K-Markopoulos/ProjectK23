@@ -3,11 +3,12 @@
 #include <vector>
 #include <algorithm>
 #include <time.h>
+#include <map>
 #include <stdbool.h>
+#include <algorithm>
 #include "../inc/database.hpp"
-#include "../inc/query.hpp"
-#include "../inc/utils.hpp"
 #include "../inc/cardinality.hpp"
+#include "../inc/utils.hpp"
 
 
 /** -----------------------------------------------------
@@ -212,7 +213,7 @@ const Selector* Query::getSelector(const int index) const{
  *
  */
 void Query::clear(){
-  LOG("Cleaning query\n");
+  LOG("Clearing query\n");
   this->relations.clear();
   this->predicates.clear();
   this->filters.clear();
@@ -281,31 +282,140 @@ uint64_t Query::getFilterCount() const{
   return filters.size();
 }
 
+// ------------------------ SUBSET FUNCTIONS --------------------------- //
+void subsetsUtil(vector<uint64_t>& A, vector<vector<uint64_t> >& res,
+                 vector<uint64_t>& subset, int index)
+{
+    for (int i = index; i < A.size(); i++) {
 
-void Query::setBestSequence() {
-  clock_t start = clock();
+        // include the A[i] in subset
+        subset.push_back(A[i]);
+        res.push_back(subset);
+
+        // move onto the next element
+        subsetsUtil(A, res, subset, i + 1);
+
+        // exclude the A[i] from subset and triggers backtracking
+        subset.pop_back();
+    }
+
+    return;
+}
+
+// below function returns the subsets of vector A
+vector<vector<uint64_t>> subsets(vector<uint64_t>& A)
+{
+    vector<uint64_t> subset;
+    vector<vector<uint64_t>> res;
+
+    // include the null element in the set
+    res.push_back(subset);
+
+    // keeps track of current element in vector A
+    int index = 0;
+    subsetsUtil(A, res, subset, index);
+
+    return res;
+}
+// ---------------------- END OF SUBSET FUNCTIONS ---------------------- //
+
+std::vector<uint64_t> insert_properly(std::vector<uint64_t> array, std::vector<uint64_t> element){
+  std::vector<uint64_t> subsequence = array;
+  subsequence.insert(subsequence.end(), element.begin(), element.end());
+  sort(subsequence.begin(), subsequence.end());
+  return subsequence;
+}
+
+bool check_connected(uint64_t rel, std::vector<uint64_t> sub, std::vector<std::vector<bool>> connected){
+  bool flag = false;
+  for(uint64_t i=0; i<sub.size();i++)
+    if(connected[rel][sub[i]] == true || connected[sub[i]][rel] == true)
+      flag = true;
+  return flag;
+}
+
+uint64_t Query::cost(std::vector<uint64_t> sequence, Cardinality cardinality){
+  uint64_t cost = 0;
+  for(uint64_t i=0; i<this->getPredicateCount(); i++){
+    const Predicate * p = getPredicate(i);
+    for(uint64_t j=0; j < sequence.size()-1; j++){
+      if((sequence[j] == p->relId1 && sequence[j+1] == p->relId2) || (sequence[j] == p->relId2 && sequence[j+1] == p->relId1))
+        cost += cardinality.assess(p);
+    }
+  }
+  return cost;
+}
+
+std::vector<uint64_t> Query::createJoinTree(std::vector<uint64_t> t1, vector<uint64_t> t2, Cardinality cardinality){
+  std::vector<uint64_t> bestTree;
+
+  do{
+      std::vector<uint64_t> tree;
+      tree.insert(tree.end(), t1.begin(), t1.end());
+      tree.insert(tree.end(), t2.begin(), t2.end());
+
+      if(bestTree.empty() || cost(bestTree, cardinality) > cost(tree, cardinality))
+        bestTree = tree;
+
+    }while(std::next_permutation(t2.begin(), t2.end()));
+
+  do{
+    std::vector<uint64_t> tree;
+    tree.insert(tree.end(), t2.begin(), t2.end());
+    tree.insert(tree.end(), t1.begin(), t1.end());
+
+    if(bestTree.empty() || cost(bestTree, cardinality) > cost(tree, cardinality))
+      bestTree = tree;
+
+  }while(std::next_permutation(t1.begin(), t1.end()));
+
+  return bestTree;
+}
+
+std::vector<uint64_t> Query::joinEnumeration() {
+  uint64_t rel_num = getRelationsCount();
+  std::map<std::vector<uint64_t>, std::vector<uint64_t>> BestTree;
+  std::vector<std::vector<bool>> connected;
+  std::vector<uint64_t> relations;
+
   Cardinality originalCardinality = Cardinality(this);
-
-  vector<Predicate*> predicates_ = predicates;
-  vector<Predicate*> bestSequence;
-  int64_t max = -1, cost = 0;
-
   for (Filter* f : filters) {
     originalCardinality.assess(f);
   }
 
-  do {
-    Cardinality cardinality = originalCardinality;
-    cost = 0;
-    for (Predicate* pred : predicates_) {
-      cost += cardinality.assess(pred);
-    }
-    if (max == -1 || cost < max) {
-      max = cost;
-      bestSequence = predicates_;
-    }
-  } while (std::next_permutation(predicates_.begin(), predicates_.end()));
+  relations.resize(rel_num);
+  connected.resize(rel_num);
+  for(uint64_t i=0; i<rel_num; i++){
+    connected[i].resize(rel_num);
+    relations[i] = i;
+    BestTree.insert(std::pair<vector<uint64_t>,vector<uint64_t>>({i},{i}));
+  }
+  for(Predicate* p : predicates)
+    connected[p->relId1][p->relId2] = true;
 
-  predicates = bestSequence;
-  elapsed.optimizer += (double)(clock() - start) / CLOCKS_PER_SEC;
+  for (uint64_t i = 0; i < rel_num - 1; i++){
+    for (std::vector<uint64_t> sub : subsets(relations)){
+      if(sub.size() == i+1){
+        for(uint64_t rel : relations){
+           if(find(sub.begin(), sub.end(), rel) != sub.end() || !check_connected(rel, sub, connected))
+          //if(find(sub.begin(), sub.end(), rel) != sub.end())
+            continue;
+          Cardinality cardinality = originalCardinality;
+
+          if(BestTree[sub].empty())
+            BestTree[sub] = sub;
+          std::vector<uint64_t> curr_tree =  createJoinTree(BestTree[sub], vector<uint64_t>{rel}, cardinality);
+
+          std::vector<uint64_t> sub_new;
+          sub_new = insert_properly(sub, std::vector<uint64_t>{rel});
+
+          if(BestTree[sub_new].empty() || cost(BestTree[sub_new], cardinality) > cost(curr_tree, cardinality)){
+            BestTree[sub_new] = curr_tree;
+          }
+        }
+      }
+    }
+  }
+
+  return BestTree[relations];
 }
