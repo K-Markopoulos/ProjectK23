@@ -20,7 +20,21 @@
 #else
 #define LOG(...) do{ } while ( 0 )
 #endif
+
 using namespace std;
+
+typedef struct elapsed_timer{
+  double loading;
+  double running;
+  double radix;
+  double filters;
+  double predicates;
+  double selectors;
+  double intermediate_build;
+  double intermediate_update;
+}elapsed_timer;
+
+extern elapsed_timer elapsed;
 
 // split a string based on the delimeter
 vector<string> split(const string line, const char delim);
