@@ -328,10 +328,11 @@ bool check_connected(uint64_t rel, std::vector<uint64_t> sub, std::vector<std::v
 uint64_t Query::cost(std::vector<uint64_t> sequence, Cardinality cardinality){
   uint64_t cost = 0;
   for(uint64_t i=0; i<this->getPredicateCount(); i++){
-    const Predicate * p = this->getPredicate(i);
-    for(uint64_t j=0; j<sequence.size()-1; j++)
-      if(sequence[j] == p->relId1 && sequence[j+1] == p->relId2 || sequence[j] == p->relId2 && sequence[j+1] == p->relId1)
+    const Predicate * p = getPredicate(i);
+    for(uint64_t j=0; j < sequence.size()-1; j++){
+      if((sequence[j] == p->relId1 && sequence[j+1] == p->relId2) || (sequence[j] == p->relId2 && sequence[j+1] == p->relId1))
         cost += cardinality.assess(p);
+    }
   }
   return cost;
 }
@@ -339,10 +340,12 @@ uint64_t Query::cost(std::vector<uint64_t> sequence, Cardinality cardinality){
 std::vector<uint64_t> Query::createJoinTree(std::vector<uint64_t> t1, uint64_t t2, Cardinality cardinality){
   std::vector<uint64_t> bestTree = t1;
   bestTree.push_back(t2);
+
   do{
     std::vector<uint64_t> tree;
     tree.push_back(t2);
     tree.insert(tree.end(), t1.begin(), t1.end());
+
     if(cost(bestTree, cardinality) > cost(tree, cardinality))
       bestTree = tree;
   }while(std::next_permutation(t1.begin(), t1.end()));
@@ -370,18 +373,34 @@ std::vector<uint64_t> Query::joinEnumeration() {
   for(Predicate* p : predicates)
     connected[p->relId1][p->relId2] = true;
 
-  for (uint64_t i = 0; i < rel_num-1; i++)
-    for (std::vector<uint64_t> sub : subsets(relations))
-      if(sub.size() == i+1)
+  for (uint64_t i = 0; i < rel_num-1; i++){
+    for (std::vector<uint64_t> sub : subsets(relations)){
+      if(sub.size() == i+1){
         for(uint64_t rel : relations){
-          if(find(sub.begin(), sub.end(), rel) !=sub.end() || !check_connected(rel, sub, connected))
+          if(find(sub.begin(), sub.end(), rel) != sub.end() || !check_connected(rel, sub, connected))
             continue;
           Cardinality cardinality = originalCardinality;
           std::vector<uint64_t> curr_tree = createJoinTree(BestTree[sub], rel, cardinality);
+
           std::vector<uint64_t> sub_new = sub;
           sub_new.push_back(rel);
-          if(!BestTree[sub_new].empty() || cost(BestTree[sub_new], cardinality) > cost(curr_tree, cardinality))
+
+          if(BestTree[sub_new].empty() || cost(BestTree[sub_new], cardinality) > cost(curr_tree, cardinality))
             BestTree[sub_new] = curr_tree;
         }
+      }
+    }
+  }
+  for(std::map<std::vector<uint64_t>, std::vector<uint64_t>>::iterator k = BestTree.begin(); k!= BestTree.end(); k++){
+    std::cout<<"[";
+    for(uint64_t i : k->first)
+      std::cout<<" "<< i << " ";
+    std::cout<<"]\t[";
+    for(uint64_t i : k->second)
+      std::cout<<" "<< i << ", ";
+    std::cout<<"]"<<std::endl;
+  }
+  for(uint64_t i : relations)
+    std::cout<< i << std::endl;
   return BestTree[relations];
 }

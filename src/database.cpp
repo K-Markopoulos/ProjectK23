@@ -67,7 +67,9 @@ string Database::run(Query& query){
   IntermediateList intermediateList = IntermediateList(query);
 
   std::vector<uint64_t> rel_sequence = query.joinEnumeration();
-
+  std::cout<<rel_sequence.size() - 1<< std::endl;
+  for(uint64_t i : rel_sequence)
+    std::cout<<"rel_sequence: "<< i << std::endl;
   //  run filters
   const Filter* filter;
   int fCount = 0;
