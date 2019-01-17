@@ -11,7 +11,7 @@
     }                         \
   }
 
-// #define PRINT_IR
+// /#define PRINT_IR
 // #define SKIP_DATA
 // #define DEBUG
 #ifdef DEBUG

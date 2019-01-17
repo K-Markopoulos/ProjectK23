@@ -286,43 +286,50 @@ void subsetsUtil(vector<uint64_t>& A, vector<vector<uint64_t> >& res,
 {
     for (int i = index; i < A.size(); i++) {
 
-        // include the A[i] in subset.
+        // include the A[i] in subset
         subset.push_back(A[i]);
         res.push_back(subset);
 
-        // move onto the next element.
+        // move onto the next element
         subsetsUtil(A, res, subset, i + 1);
 
-        // exclude the A[i] from subset and triggers
-        // backtracking.
+        // exclude the A[i] from subset and triggers backtracking
         subset.pop_back();
     }
 
     return;
 }
 
-// below function returns the subsets of vector A.
+// below function returns the subsets of vector A
 vector<vector<uint64_t>> subsets(vector<uint64_t>& A)
 {
     vector<uint64_t> subset;
     vector<vector<uint64_t>> res;
 
-    // include the null element in the set.
+    // include the null element in the set
     res.push_back(subset);
 
-    // keeps track of current element in vector A;
+    // keeps track of current element in vector A
     int index = 0;
     subsetsUtil(A, res, subset, index);
 
     return res;
 }
-// ------------------------------- END OF SUBSETS ---------------------- //
+// ---------------------- END OF SUBSET FUNCTIONS ---------------------- //
+
+std::vector<uint64_t> insert_properly(std::vector<uint64_t> array, std::vector<uint64_t> element){
+  std::vector<uint64_t> subsequence = array;
+  subsequence.insert(subsequence.end(), element.begin(), element.end());
+  sort(subsequence.begin(), subsequence.end());
+  return subsequence;
+}
 
 bool check_connected(uint64_t rel, std::vector<uint64_t> sub, std::vector<std::vector<bool>> connected){
+  bool flag = false;
   for(uint64_t i=0; i<sub.size();i++)
-    if(connected[rel][sub[i]] == false && connected[sub[i]][rel] == false)
-      return false;
-  return true;
+    if(connected[rel][sub[i]] == true || connected[sub[i]][rel] == true)
+      flag = true;
+  return flag;
 }
 
 uint64_t Query::cost(std::vector<uint64_t> sequence, Cardinality cardinality){
@@ -337,18 +344,29 @@ uint64_t Query::cost(std::vector<uint64_t> sequence, Cardinality cardinality){
   return cost;
 }
 
-std::vector<uint64_t> Query::createJoinTree(std::vector<uint64_t> t1, uint64_t t2, Cardinality cardinality){
-  std::vector<uint64_t> bestTree = t1;
-  bestTree.push_back(t2);
+std::vector<uint64_t> Query::createJoinTree(std::vector<uint64_t> t1, vector<uint64_t> t2, Cardinality cardinality){
+  std::vector<uint64_t> bestTree;
+
+  do{
+      std::vector<uint64_t> tree;
+      tree.insert(tree.end(), t1.begin(), t1.end());
+      tree.insert(tree.end(), t2.begin(), t2.end());
+
+      if(bestTree.empty() || cost(bestTree, cardinality) > cost(tree, cardinality))
+        bestTree = tree;
+
+    }while(std::next_permutation(t2.begin(), t2.end()));
 
   do{
     std::vector<uint64_t> tree;
-    tree.push_back(t2);
+    tree.insert(tree.end(), t2.begin(), t2.end());
     tree.insert(tree.end(), t1.begin(), t1.end());
 
-    if(cost(bestTree, cardinality) > cost(tree, cardinality))
+    if(bestTree.empty() || cost(bestTree, cardinality) > cost(tree, cardinality))
       bestTree = tree;
+
   }while(std::next_permutation(t1.begin(), t1.end()));
+
   return bestTree;
 }
 
@@ -373,34 +391,29 @@ std::vector<uint64_t> Query::joinEnumeration() {
   for(Predicate* p : predicates)
     connected[p->relId1][p->relId2] = true;
 
-  for (uint64_t i = 0; i < rel_num-1; i++){
+  for (uint64_t i = 0; i < rel_num - 1; i++){
     for (std::vector<uint64_t> sub : subsets(relations)){
       if(sub.size() == i+1){
         for(uint64_t rel : relations){
-          if(find(sub.begin(), sub.end(), rel) != sub.end() || !check_connected(rel, sub, connected))
+           if(find(sub.begin(), sub.end(), rel) != sub.end() || !check_connected(rel, sub, connected))
+          //if(find(sub.begin(), sub.end(), rel) != sub.end())
             continue;
           Cardinality cardinality = originalCardinality;
-          std::vector<uint64_t> curr_tree = createJoinTree(BestTree[sub], rel, cardinality);
 
-          std::vector<uint64_t> sub_new = sub;
-          sub_new.push_back(rel);
+          if(BestTree[sub].empty())
+            BestTree[sub] = sub;
+          std::vector<uint64_t> curr_tree =  createJoinTree(BestTree[sub], vector<uint64_t>{rel}, cardinality);
 
-          if(BestTree[sub_new].empty() || cost(BestTree[sub_new], cardinality) > cost(curr_tree, cardinality))
+          std::vector<uint64_t> sub_new;
+          sub_new = insert_properly(sub, std::vector<uint64_t>{rel});
+
+          if(BestTree[sub_new].empty() || cost(BestTree[sub_new], cardinality) > cost(curr_tree, cardinality)){
             BestTree[sub_new] = curr_tree;
+          }
         }
       }
     }
   }
-  for(std::map<std::vector<uint64_t>, std::vector<uint64_t>>::iterator k = BestTree.begin(); k!= BestTree.end(); k++){
-    std::cout<<"[";
-    for(uint64_t i : k->first)
-      std::cout<<" "<< i << " ";
-    std::cout<<"]\t[";
-    for(uint64_t i : k->second)
-      std::cout<<" "<< i << ", ";
-    std::cout<<"]"<<std::endl;
-  }
-  for(uint64_t i : relations)
-    std::cout<< i << std::endl;
+
   return BestTree[relations];
 }

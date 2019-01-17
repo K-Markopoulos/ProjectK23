@@ -14,7 +14,7 @@ TEST_OBJ = $(TEST_SRC:$(TEST_SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 F_OBJ = $(filter-out obj/main.o,$(OBJ))
 T_OBJ = $(filter-out obj/cardinality.o,$(F_OBJ))
 
-CCFLAGS = -std=c++11 -g3
+CCFLAGS = -std=c++11 -O3
 
 .PHONY: clean
 .PHONY: directories

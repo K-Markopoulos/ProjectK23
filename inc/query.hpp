@@ -47,7 +47,7 @@ class Query{
     // Join Enumeration function
     std::vector<uint64_t> joinEnumeration();
 
-    std::vector<uint64_t> createJoinTree(std::vector<uint64_t>, uint64_t,Cardinality);
+    std::vector<uint64_t> createJoinTree(std::vector<uint64_t>, std::vector<uint64_t>,Cardinality);
     // Cost functions
     uint64_t cost(std::vector<uint64_t>,Cardinality);
     // clear query
