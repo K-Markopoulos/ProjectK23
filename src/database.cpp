@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <algorithm>
 #include "../inc/database.hpp"
 #include "../inc/intermediate.hpp"
 #include "../inc/utils.hpp"
@@ -82,16 +83,24 @@ string Database::run(Query& query){
   //  calculate predicate execution order
   std::vector<uint64_t> pred_sequence;
 
-  for(uint64_t j=0; j<rel_sequence.size()-1; j++){
+  for(uint64_t i=0; i<query.getPredicateCount(); i++){
+    const Predicate * p = query.getPredicate(i);
+    if((rel_sequence[0] == p->relId1 && rel_sequence[1] == p->relId2) || (rel_sequence[0] == p->relId2 && rel_sequence[1] == p->relId1))
+      pred_sequence.push_back(i);
+  }
+
+  for(uint64_t rel1 : rel_sequence)
     for(uint64_t i=0; i<query.getPredicateCount(); i++){
       const Predicate * p = query.getPredicate(i);
-      if(rel_sequence[j] == p->relId1 && rel_sequence[j+1] == p->relId2 || rel_sequence[j] == p->relId2 && rel_sequence[j+1] == p->relId1)
-        pred_sequence.push_back(i);
+      for(uint64_t rel2 : rel_sequence)
+        if(((rel1 == p->relId1 && rel2 == p->relId2) || (rel1 == p->relId2 && rel2 == p->relId1)) && find(pred_sequence.begin(), pred_sequence.end(), i) == pred_sequence.end())
+          pred_sequence.push_back(i);
     }
-  }
+
 
   // run predicates
   for(uint64_t i : pred_sequence){
+    std:: cout<<i<<std::endl;
     runPredicate(query.getPredicate(i), intermediateList);
   }
 
