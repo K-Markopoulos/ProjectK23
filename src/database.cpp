@@ -83,7 +83,7 @@ string Database::run(Query& query){
 
   //  calculate predicate execution order
   std::vector<uint64_t> pred_sequence;
-
+  clock_t start = clock();
   for(uint64_t i=0; i<query.getPredicateCount(); i++){
     const Predicate * p = query.getPredicate(i);
     if((rel_sequence[0] == p->relId1 && rel_sequence[1] == p->relId2) || (rel_sequence[0] == p->relId2 && rel_sequence[1] == p->relId1))
@@ -97,7 +97,7 @@ string Database::run(Query& query){
         if(((rel1 == p->relId1 && rel2 == p->relId2) || (rel1 == p->relId2 && rel2 == p->relId1)) && find(pred_sequence.begin(), pred_sequence.end(), i) == pred_sequence.end())
           pred_sequence.push_back(i);
     }
-
+    elapsed.optimizer += (double)(clock() - start) / CLOCKS_PER_SEC;
 
   // run predicates
   for(uint64_t i : pred_sequence){

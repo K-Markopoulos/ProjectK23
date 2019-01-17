@@ -373,6 +373,7 @@ std::vector<uint64_t> Query::createJoinTree(std::vector<uint64_t> t1, vector<uin
 }
 
 std::vector<uint64_t> Query::joinEnumeration() {
+  clock_t start = clock();
   uint64_t rel_num = getRelationsCount();
   std::map<std::vector<uint64_t>, std::vector<uint64_t>> BestTree;
   std::vector<std::vector<bool>> connected;
@@ -418,4 +419,5 @@ std::vector<uint64_t> Query::joinEnumeration() {
   }
 
   return BestTree[relations];
+  elapsed.optimizer += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
