@@ -327,37 +327,34 @@ std::vector<uint64_t> insert_properly(std::vector<uint64_t> array, std::vector<u
 }
 
 bool check_connected(uint64_t rel, std::vector<uint64_t> sub, std::vector<std::vector<bool>> connected){
-  bool flag = false;
   for(uint64_t i=0; i<sub.size();i++)
     if(connected[rel][sub[i]] == true || connected[sub[i]][rel] == true)
-      flag = true;
-  return flag;
+      return true;
+  return false;
 }
 
 uint64_t Query::cost(std::vector<uint64_t> sequence, Cardinality cardinality){
   uint64_t cost = 0;
-  for(uint64_t i=0; i<this->getPredicateCount(); i++){
-    const Predicate * p = getPredicate(i);
-    for(uint64_t j=0; j < sequence.size()-1; j++){
-      if((sequence[j] == p->relId1 && sequence[j+1] == p->relId2) || (sequence[j] == p->relId2 && sequence[j+1] == p->relId1))
-        cost += cardinality.assess(p);
-    }
-  }
+  std::vector<uint64_t> temp;
+
+  for(uint64_t rel1 : sequence)
+    for(uint64_t rel2 : sequence)
+      // skip rel1 == rel2 if we assume that predicates only use different relations
+      for(uint64_t i=0; i < getPredicateCount(); i++){
+        const Predicate * p = getPredicate(i);
+        if(((rel1 == p->relId1 && rel2 == p->relId2) || (rel1 == p->relId2 && rel2 == p->relId1)) && find(temp.begin(), temp.end(), i) == temp.end()){
+          cost += cardinality.assess(p);
+          temp.push_back(i);
+          // break if we assume there is no other predicate using these 2 relations
+        }
+      }
   return cost;
 }
 
 std::vector<uint64_t> Query::createJoinTree(std::vector<uint64_t> t1, vector<uint64_t> t2, Cardinality cardinality){
-  std::vector<uint64_t> bestTree;
+  std::vector<uint64_t> bestTree = t1;
 
-  do{
-      std::vector<uint64_t> tree;
-      tree.insert(tree.end(), t1.begin(), t1.end());
-      tree.insert(tree.end(), t2.begin(), t2.end());
-
-      if(bestTree.empty() || cost(bestTree, cardinality) > cost(tree, cardinality))
-        bestTree = tree;
-
-    }while(std::next_permutation(t2.begin(), t2.end()));
+  bestTree.insert(bestTree.end(), t2.begin(), t2.end());
 
   do{
     std::vector<uint64_t> tree;
@@ -366,7 +363,6 @@ std::vector<uint64_t> Query::createJoinTree(std::vector<uint64_t> t1, vector<uin
 
     if(bestTree.empty() || cost(bestTree, cardinality) > cost(tree, cardinality))
       bestTree = tree;
-
   }while(std::next_permutation(t1.begin(), t1.end()));
 
   return bestTree;
@@ -393,12 +389,11 @@ std::vector<uint64_t> Query::joinEnumeration() {
   for(Predicate* p : predicates)
     connected[p->relId1][p->relId2] = true;
 
-  for (uint64_t i = 0; i < rel_num - 1; i++){
-    for (std::vector<uint64_t> sub : subsets(relations)){
-      if(sub.size() == i+1){
+  for (uint64_t i = 0; i < rel_num - 1; i++)
+    for (std::vector<uint64_t> sub : subsets(relations))
+      if(sub.size() == i+1)
         for(uint64_t rel : relations){
-           if(find(sub.begin(), sub.end(), rel) != sub.end() || !check_connected(rel, sub, connected))
-          //if(find(sub.begin(), sub.end(), rel) != sub.end())
+          if(find(sub.begin(), sub.end(), rel) != sub.end() || !check_connected(rel, sub, connected))
             continue;
           Cardinality cardinality = originalCardinality;
 
@@ -409,13 +404,9 @@ std::vector<uint64_t> Query::joinEnumeration() {
           std::vector<uint64_t> sub_new;
           sub_new = insert_properly(sub, std::vector<uint64_t>{rel});
 
-          if(BestTree[sub_new].empty() || cost(BestTree[sub_new], cardinality) > cost(curr_tree, cardinality)){
+          if(BestTree[sub_new].empty() || cost(BestTree[sub_new], cardinality) > cost(curr_tree, cardinality))
             BestTree[sub_new] = curr_tree;
-          }
         }
-      }
-    }
-  }
 
   return BestTree[relations];
 }

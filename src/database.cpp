@@ -100,9 +100,8 @@ string Database::run(Query& query){
 
 
   // run predicates
-  for(uint64_t i : pred_sequence){
+  for(uint64_t i : pred_sequence)
     runPredicate(query.getPredicate(i), intermediateList);
-  }
 
   string response;
   //  run selectors (sums)
