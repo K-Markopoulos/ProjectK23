@@ -90,7 +90,7 @@ void IntermediateList::merge(Intermediate* i1, Intermediate* i2, int col1, int c
   LOG("\t\tmatching %lu rows\n", results->num_tuples);
   assert(col1 < i1->cSize());
   assert(col2 < i2->cSize());
-
+  clock_t start = clock();
 
   list.push_back(new Intermediate(query));
   Intermediate* mergedI = list[list.size()-1];
@@ -145,6 +145,7 @@ void IntermediateList::merge(Intermediate* i1, Intermediate* i2, int col1, int c
     }
   }
 
+  elapsed.intermediate_update += (double)(clock() - start) / CLOCKS_PER_SEC;
   LOG("\t\t^Merged %d rows list size %lu\n", mergedI->rSize(), list.size());
   mergedI->print();
 }
@@ -270,15 +271,15 @@ void Intermediate::update(int col1, int col2, result* results){
   } else {
     vector<vector<uint64_t>> new_rowIds;
     new_rowIds.resize(rowIds.size());
-    for(vector<uint64_t> v : new_rowIds)
-      v.reserve(results->num_tuples);
+    for(int i = 0; i < new_rowIds.size(); i ++)
+      new_rowIds[i].reserve(results->num_tuples);
     uint64_t r = 0;
     tuple_* tuple;
     initIterator(results);
     while(tuple=getResult(results)){
       new_rowIds[col1].push_back(loaded[col1]? rowIds[col1][tuple->key]: tuple->key);
       new_rowIds[col2].push_back(loaded[col2]? rowIds[col2][tuple->payload]: tuple->payload);
-      for(uint64_t c = 0; c < rowIds.size(); c++){
+      for(int c = 0; c < rowIds.size(); c++){
         if(loaded[c] && c!=col1 && c!=col2){
           new_rowIds[c].push_back(rowIds[c][tuple->key]);
         }
@@ -354,8 +355,8 @@ bool Intermediate::isLoaded(int c){
  *
  * @params c, num of column
  */
-void Intermediate::setLoaded(int c){
-  assert(c < loaded.size());
+inline void Intermediate::setLoaded(int c){
+  // assert(c < loaded.size());
   loaded[c] = true;
 }
 
@@ -379,9 +380,9 @@ uint64_t Intermediate::get(int c, int r){
  * @params c, num of column
  * @params value, value to set in r-th row and c-th column
  */
-void Intermediate::set(int c, int r, uint64_t value){
-  assert(c < rowIds.size());
-  assert(r < rowIds[c].size());
+inline void Intermediate::set(int c, int r, uint64_t value){
+  // assert(c < rowIds.size());
+  // assert(r < rowIds[c].size());
   rowIds[c][r] = value;
 }
 
@@ -391,8 +392,8 @@ void Intermediate::set(int c, int r, uint64_t value){
  * @params c, num of column
  * @params value, value to push back in c-th column
  */
-void Intermediate::push(int c, uint64_t value){
-  assert(c < rowIds.size());
+inline void Intermediate::push(int c, uint64_t value){
+  // assert(c < rowIds.size());
   rowIds[c].push_back(value);
 }
 
