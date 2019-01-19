@@ -271,8 +271,8 @@ void Intermediate::update(int col1, int col2, result* results){
   } else {
     vector<vector<uint64_t>> new_rowIds;
     new_rowIds.resize(rowIds.size());
-    for(vector<uint64_t> v : new_rowIds)
-      v.reserve(results->num_tuples);
+    for(int i = 0; i < new_rowIds.size(); i ++)
+      new_rowIds[i].reserve(results->num_tuples);
     uint64_t r = 0;
     tuple_* tuple;
     initIterator(results);
@@ -355,7 +355,7 @@ bool Intermediate::isLoaded(int c){
  *
  * @params c, num of column
  */
-void Intermediate::setLoaded(int c){
+inline void Intermediate::setLoaded(int c){
   assert(c < loaded.size());
   loaded[c] = true;
 }
@@ -380,7 +380,7 @@ uint64_t Intermediate::get(int c, int r){
  * @params c, num of column
  * @params value, value to set in r-th row and c-th column
  */
-void Intermediate::set(int c, int r, uint64_t value){
+inline void Intermediate::set(int c, int r, uint64_t value){
   assert(c < rowIds.size());
   assert(r < rowIds[c].size());
   rowIds[c][r] = value;
@@ -392,8 +392,8 @@ void Intermediate::set(int c, int r, uint64_t value){
  * @params c, num of column
  * @params value, value to push back in c-th column
  */
-void Intermediate::push(int c, uint64_t value){
-  assert(c < rowIds.size());
+inline void Intermediate::push(int c, uint64_t value){
+  // assert(c < rowIds.size());
   rowIds[c].push_back(value);
 }
 
