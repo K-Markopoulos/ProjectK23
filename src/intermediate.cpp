@@ -90,6 +90,7 @@ void IntermediateList::merge(Intermediate* i1, Intermediate* i2, int col1, int c
   LOG("\t\tmatching %lu rows\n", results->num_tuples);
   assert(col1 < i1->cSize());
   assert(col2 < i2->cSize());
+  clock_t start = clock();
 
 
   list.push_back(new Intermediate(query));
@@ -144,7 +145,7 @@ void IntermediateList::merge(Intermediate* i1, Intermediate* i2, int col1, int c
       list.erase(list.begin() + i--);
     }
   }
-
+  elapsed.intermediate_update += (double)(clock() - start) / CLOCKS_PER_SEC;
   LOG("\t\t^Merged %d rows list size %lu\n", mergedI->rSize(), list.size());
   mergedI->print();
 }

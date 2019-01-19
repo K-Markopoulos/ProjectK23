@@ -233,6 +233,7 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
   if (predicate->relId1 == predicate->relId2){
     LOG("\tIts a self join\n");
     //self join
+    clock_t start_ = clock();
     Intermediate* intermediate = results.getIntermediateByRel(predicate->relId1);
     if(intermediate){
       vector<uint64_t>* column = intermediate->getColumn(predicate->relId1);
@@ -253,6 +254,7 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
           predicate->relation2->getTuple(predicate->col2, t)){
             new_column.push_back(t);
           }
+      elapsed.intermediate_update += (double)(clock() - start_) / CLOCKS_PER_SEC;
       intermediate->updateColumn(predicate->relId1, &new_column);
     }
   } else {
