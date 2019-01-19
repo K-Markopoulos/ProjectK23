@@ -4,6 +4,7 @@ EXE = runner
 
 SRC_DIR = src
 OBJ_DIR = obj
+INC_DIR = inc
 TEST_SRC_DIR = tests
 TEST_OBJ_DIR = obj
 
@@ -12,8 +13,9 @@ TEST_SRC = $(wildcard $(TEST_SRC_DIR)/*.cpp)
 OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 TEST_OBJ = $(TEST_SRC:$(TEST_SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 F_OBJ = $(filter-out obj/main.o,$(OBJ))
+DEPS = $(wildcard $(INC_DIR)/*.h*)
 
-CCFLAGS = -std=c++11 -g3
+CCFLAGS = -std=c++11 -O3 -pthread
 
 .PHONY: clean
 .PHONY: directories
@@ -27,10 +29,10 @@ $(EXE): directories $(OBJ)
 	#		time ./runner < init | ./check.sh ./workloads/small/small.result
 	#
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEPS)
 	$(CC) $(CCFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.cpp $(DEPS)
 	$(CC) $(CCFLAGS) -c $< -o $@
 
 clean:
@@ -69,4 +71,15 @@ test_relation: $(F_OBJ) ./obj/testRelation.o
 	#
 	# OK! now try ./test_relation.sh
 	# (disable LOG for test to work)
+	#
+
+test_threads: ./obj/testThreads.o ./obj/jobScheduler.o
+	$(CC) -o $@ $^ $(CCFLAGS)
+	#
+	# OK! now try ./test_threads [Threads] [Jobs]
+
+test_stats: $(F_OBJ) ./obj/testStats.o
+	$(CC) -o $@ $^ $(CCFLAGS)
+	#
+	# OK! now try echo -e '\n' | cat ./workloads/small/small.init - ./workloads/small/small.work | ./test_parsing
 	#

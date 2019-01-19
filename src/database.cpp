@@ -1,13 +1,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <time.h>
 #include <unistd.h>
 #include "../inc/database.hpp"
 #include "../inc/intermediate.hpp"
-#include "../inc/relation.hpp"
-#include "../inc/query.hpp"
 #include "../inc/utils.hpp"
 #include "../inc/result.h"
+#include "../inc/cardinality.hpp"
 
 using namespace std;
 
@@ -62,10 +62,11 @@ size_t Database::getRelationsCount(){
  * @params query
  * @returns char*, result from query
  */
-string Database::run(const Query& query){
-  //  initialize Intermmediate results
+string Database::run(Query& query){
   LOG("Running query \n");
   IntermediateList intermediateList = IntermediateList(query);
+
+  query.setBestSequence();
 
   //  run filters
   const Filter* filter;
@@ -94,11 +95,6 @@ string Database::run(const Query& query){
   }
 
   return response;
-
-  // LOG("DONE! ----------- SHOWING INTERMEDIATES -----------\n");
-  // for(int i = 0; i < intermediateList.getIntermediateCount(); i++){
-  //   intermediateList.getIntermediate(i)->print();
-  // }
 }
 
 /** -----------------------------------------------------
@@ -128,6 +124,7 @@ inline bool op(char op, uint64_t v1, uint64_t v2){
  */
 void Database::runFilter(const Filter* filter, IntermediateList& results){
   LOG("\tRunning filter ..%c%ld\n",filter->op, filter->value);
+  clock_t start = clock();
 
   Intermediate* intermediate = results.getIntermediateByRel(filter->relId);
   if(intermediate){
@@ -135,12 +132,29 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
     vector<uint64_t>* column = intermediate->getColumn(filter->relId);
     vector<uint64_t> new_column;
     // compare
-    for(int t = 0; t < column->size(); t++){
-      int64_t value = filter->relation->getTuple(filter->col, (*column)[t]);
-      if(op(filter->op, value, filter->value)){
-        new_column.push_back((*column)[t]);
-      }
+    uint64_t count = 0;
+    for(int t = 0; t < column->size(); t++)
+      if(filter->relation->getTuple(filter->col, (*column)[t]) > filter->value)
+        count++;
+    new_column.reserve(count);
+    switch(filter->op){
+      case '>':
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) > filter->value)
+            new_column.push_back((*column)[t]);
+        break;
+      case '<':
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) < filter->value)
+            new_column.push_back((*column)[t]);
+        break;
+      case '=':
+        for(int t = 0; t < column->size(); t++)
+          if(filter->relation->getTuple(filter->col, (*column)[t]) == filter->value)
+            new_column.push_back((*column)[t]);
+        break;
     }
+
     // update intermediate
     intermediate->update(filter->relId, &new_column);
   } else {
@@ -148,16 +162,40 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
     intermediate = results.createIntermediate();
     vector<uint64_t> new_column;
     // pull data from relation
-    for(int t = 0; t < filter->relation->getTupleCount(); t++){
-      int64_t value = filter->relation->getTuple(filter->col, t);
-      if(op(filter->op, value, filter->value)){
-        // push to new intermediate
-        new_column.push_back(t);
-      }
+    uint64_t count = 0;
+    switch(filter->op){
+      case '>':
+        for(int t = 0; t < filter->relation->getTupleCount(); t++)
+          if(filter->relation->getTuple(filter->col, t) > filter->value)
+            count++;
+        new_column.reserve(count);
+        for(int t = 0; t < filter->relation->getTupleCount(); t++)
+          if(filter->relation->getTuple(filter->col, t) > filter->value)
+            new_column.push_back(t);
+        break;
+      case '<':
+        for(int t = 0; t < filter->relation->getTupleCount(); t++)
+          if(filter->relation->getTuple(filter->col, t) < filter->value)
+            count++;
+        new_column.reserve(count);
+        for(int t = 0; t < filter->relation->getTupleCount(); t++)
+          if(filter->relation->getTuple(filter->col, t) < filter->value)
+            new_column.push_back(t);
+        break;
+      case '=':
+        for(int t = 0; t < filter->relation->getTupleCount(); t++)
+          if(filter->relation->getTuple(filter->col, t) == filter->value)
+            count++;
+        new_column.reserve(count);
+        for(int t = 0; t < filter->relation->getTupleCount(); t++)
+          if(filter->relation->getTuple(filter->col, t) == filter->value)
+            new_column.push_back(t);
+        break;
     }
     intermediate->updateColumn(filter->relId, &new_column);
   }
 
+  elapsed.filters += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 /** -----------------------------------------------------
@@ -168,6 +206,8 @@ void Database::runFilter(const Filter* filter, IntermediateList& results){
  */
 void Database::runPredicate(const Predicate* predicate, IntermediateList& results){
   LOG("Running predicate %lu.%lu%c%lu.%lu\n", predicate->relId1, predicate->col1, predicate->op, predicate->relId2, predicate->col2);
+  clock_t start = clock();
+
   if (predicate->relId1 == predicate->relId2){
     LOG("\tIts a self join\n");
     //self join
@@ -179,7 +219,6 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       for(uint64_t t = 0; t < column->size(); t++)
           if(predicate->relation1->getTuple(predicate->col1, (*column)[t]) ==
           predicate->relation2->getTuple(predicate->col2, (*column)[t])){
-            //LOG("\tmatching row %lu\n", (*column)[t]);
             new_column.push_back((*column)[t]);
           }
       intermediate->update(predicate->relId1, &new_column);
@@ -190,7 +229,6 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
       for(uint64_t t = 0; t < predicate->relation1->getTupleCount(); t++)
           if(predicate->relation1->getTuple(predicate->col1, t) ==
           predicate->relation2->getTuple(predicate->col2, t)){
-            //LOG("\tmatching row %lu\n", t);
             new_column.push_back(t);
           }
       intermediate->updateColumn(predicate->relId1, &new_column);
@@ -229,16 +267,17 @@ void Database::runPredicate(const Predicate* predicate, IntermediateList& result
     } else if (!intermediate1 && intermediate2) {
       intermediate2->update(predicate->relId1, predicate->relId2, res);
     } else {
-      LOG("\t\tfound both intermediate1 and intermediate2, updating both (should I?)\n");
-      intermediate1->update(predicate->relId1, predicate->relId2, res);
-      // intermediate2->update(predicate->relId1, predicate->relId2, res);
+      LOG("\t\tfound both intermediate1 and intermediate2, merging (should I?)\n");
+      results.merge(intermediate1, intermediate2, predicate->relId1, predicate->relId2, res);
     }
     destroyResult(res);
   }
+  elapsed.predicates += (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 string Database::runSelector(const Selector* selector, IntermediateList& results){
   LOG("Running selector %lu.%lu\n", selector->relId, selector->col);
+  clock_t start = clock();
 
   Intermediate* intermediate = results.getIntermediateByRel(selector->relId);
   uint64_t sum = 0;
@@ -256,5 +295,6 @@ string Database::runSelector(const Selector* selector, IntermediateList& results
       sum += selector->relation->getTuple(selector->col, t);
   }
   LOG("\t>sum:%lu\n", sum);
+  elapsed.selectors += (double)(clock() - start) / CLOCKS_PER_SEC;
   return to_string(sum);
 }

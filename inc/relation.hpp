@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "../inc/radix.h"
+#include "../inc/stats.hpp"
 
 class Relation{
   int _id;
@@ -13,6 +14,8 @@ class Relation{
   void* memblock;
   size_t memsize;
   std::vector<void *> cols;
+  std::vector<Stats> stats;
+
   public:
     Relation(std::string fileName);
     //  load relation in memory
@@ -31,6 +34,8 @@ class Relation{
     uint64_t getTupleCount() const;
     // build relation of [rowId,value] tuples
     relation* buildRelation(int col);
+    // get Statistic vaulues of a relation
+    std::vector<Stats> getStats();
     // destructor
     ~Relation();
 };
