@@ -100,8 +100,10 @@ string Database::run(Query& query){
     elapsed.optimizer += (double)(clock() - start) / CLOCKS_PER_SEC;
 
   // run predicates
+  const Predicate * p;
   for(uint64_t i : pred_sequence){
-    runPredicate(query.getPredicate(i), intermediateList);
+    runPredicate(p = query.getPredicate(i), intermediateList);
+    delete p;
   }
 
   string response;
