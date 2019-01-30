@@ -3,9 +3,9 @@
 
 ## Parts
 
-* Part1: [DONE] Implementation of [Radix Hash Join](https://systems.ethz.ch/node/334) algorithm for two relations
-* Part2: Execution of multiple join queries
-* Part3: Query optimization using threads
+- [x] Part1: Implementation of [Radix Hash Join](https://systems.ethz.ch/node/334) algorithm for two relations
+- [x] Part2: Execution of multiple join queries
+- [x] Part3: Query optimization using threads
 
 ## Run in a terminal/bash
 
